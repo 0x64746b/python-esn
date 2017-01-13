@@ -63,9 +63,10 @@ class ESN(object):
                 )
             S[:, i] = np.vstack((1, u, self.x))[:, 0]
 
-        # discard states contaminated by initial transients
-        # TODO: use `np.delete()`
-        S = S[:, self.washout:]
+        # discard states contaminated by initial transients and their
+        # corresponding outputs
+        S = np.delete(S, np.s_[:self.washout], 1)
+        output_data = np.delete(output_data, np.s_[:self.washout], 1)
 
         # compute output weights
         S_prime = S.T
