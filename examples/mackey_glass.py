@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from sys import argv
 
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 from esn import ESN
 
@@ -33,14 +34,20 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
     for i in range(len(inputs)):
         input_date = inputs[i]
         predicted_output = esn.predict(input_date)
+        predicted_output = predicted_output[0][0]
 
         print(
             '{} -> {} (Δ {})'.format(
                 input_date,
-                predicted_output[0][0],
-                correct_outputs[i] - predicted_output[0][0]
+                predicted_output,
+                correct_outputs[i] - predicted_output
             )
         )
+
+        predicted_outputs.append(predicted_output)
+
+    mse = mean_squared_error(correct_outputs, predicted_outputs)
+    print('\n MSE: {}'.format(mse))
 
 
 if __name__ == '__main__':
