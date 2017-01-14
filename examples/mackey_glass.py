@@ -52,16 +52,8 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
     print('\n MSE: {}'.format(mse))
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        'data_file',
-        help='the file containing the data to learn'
-    )
-
-    args = parser.parse_args()
-
-    data = np.loadtxt(args.data_file)
+def load_data(file_name):
+    data = np.loadtxt(file_name)
 
     training_inputs = data[:NUM_TRAINING_SAMPLES]
     training_outputs = data[None, 1:NUM_TRAINING_SAMPLES+1]
@@ -71,4 +63,17 @@ if __name__ == '__main__':
     inputs = data[:NUM_PREDICTION_SAMPLES]
     correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
 
-    main(training_inputs, training_outputs, inputs, correct_outputs)
+    return training_inputs, training_outputs, inputs, correct_outputs
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        'data_file',
+        help='the file containing the data to learn'
+    )
+
+    args = parser.parse_args()
+
+    data = load_data(args.data_file)
+    main(*data)
