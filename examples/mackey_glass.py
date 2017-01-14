@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+"""Learn the Mackey-Glass equation."""
+
+
 from __future__ import absolute_import, print_function, unicode_literals
 
-
-from sys import argv
+import argparse
 
 import numpy as np
 from sklearn.metrics import mean_squared_error
@@ -51,7 +53,15 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
 
 
 if __name__ == '__main__':
-    data = np.loadtxt(argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        'data_file',
+        help='the file containing the data to learn'
+    )
+
+    args = parser.parse_args()
+
+    data = np.loadtxt(args.data_file)
 
     training_inputs = data[:NUM_TRAINING_SAMPLES]
     training_outputs = data[None, 1:NUM_TRAINING_SAMPLES+1]
