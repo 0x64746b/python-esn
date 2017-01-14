@@ -37,7 +37,7 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
         predicted_output = predicted_output[0][0]
 
         print(
-            '{} -> {} (Δ {})'.format(
+            '{:0< 18} -> {:0< 18} (Δ {:< 18})'.format(
                 input_date,
                 predicted_output,
                 correct_outputs[i] - predicted_output
