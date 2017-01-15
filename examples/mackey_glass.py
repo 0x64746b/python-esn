@@ -50,12 +50,16 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
 
         predicted_outputs.append(predicted_output)
 
-    mse = mean_squared_error(correct_outputs, predicted_outputs)
+    plot_results(correct_outputs, predicted_outputs, mode='Prediction')
 
-    plt.plot(correct_outputs, label='correct outputs')
-    plt.plot(predicted_outputs, label='predicted outputs')
+
+def plot_results(reference, predicted, mode):
+    mse = mean_squared_error(reference, predicted)
+
+    plt.plot(reference, label='Reference')
+    plt.plot(predicted, label='Predicted')
     plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
-    plt.gca().set_title('Mode: Prediction')
+    plt.gca().set_title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
 
