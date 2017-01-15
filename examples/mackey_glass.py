@@ -84,16 +84,12 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    predicted_output = esn.predict(inputs[0])[0][0]
-    predicted_outputs = [predicted_output]
-
+    predicted_outputs = [esn.predict(inputs[0])[0][0]]
     for i in range(1, len(inputs)):
-        predicted_output = esn.predict(predicted_output)
-        predicted_outputs.append(predicted_output[0][0])
+        predicted_outputs.append(esn.predict(predicted_outputs[i-1])[0][0])
 
     debug()
     plot_results(correct_outputs, predicted_outputs, mode='generate')
-
 
 
 def plot_results(reference, predicted, mode):
