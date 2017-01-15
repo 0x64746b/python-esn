@@ -24,21 +24,27 @@ NUM_PREDICTION_SAMPLES = 1000
 logger = logging.getLogger('python-esn.examples')
 
 
-def predict(training_inputs, training_outputs, inputs):
+class Predictor(object):
     """Predict the next value for each given input."""
-    esn = ESN(
-        in_size=1,
-        reservoir_size=1000,
-        out_size=1,
-        spectral_radius=1.25,
-        leaking_rate=0.3,
-        washout=100,
-        smoothing_factor=0.0001
-    )
 
-    esn.fit(training_inputs, training_outputs)
+    def __init__(self, training_inputs, training_outputs, inputs):
+        self._training_inputs = training_inputs
+        self._training_outputs = training_outputs
+        self._inputs = inputs
 
-    return [esn.predict(input_date)[0][0] for input_date in inputs]
+    def __call__(self):
+        esn = ESN(
+            in_size=1,
+            reservoir_size=1000,
+            out_size=1,
+            spectral_radius=1.25,
+            leaking_rate=0.3,
+            washout=100,
+            smoothing_factor=0.0001
+        )
+        esn.fit(self._training_inputs, self._training_outputs)
+
+        return [esn.predict(input_date)[0][0] for input_date in self._inputs]
 
 
 def plot_results(reference, predicted, mode):
@@ -88,7 +94,7 @@ def parse_command_line_args():
         metavar='sub-command'
     )
 
-    predict_command = sub_commands.add_parser('predict', help=predict.__doc__)
+    predict_command = sub_commands.add_parser('predict', help=Predictor.__doc__)
     predict_command.add_argument(
         'data_file',
         help='the file containing the data to learn'
@@ -98,7 +104,7 @@ def parse_command_line_args():
 
 
 COMMANDS = {
-    'predict': predict,
+    'predict': Predictor,
 }
 
 
@@ -108,6 +114,8 @@ if __name__ == '__main__':
     setup_logging(args.log_level)
 
     data = load_data(args.data_file)
-    results = COMMANDS[args.sub_command](*data[:-1])
+
+    command = COMMANDS[args.sub_command](*data[:-1])
+    results = command()
 
     plot_results(data[-1], results, mode=args.sub_command)
