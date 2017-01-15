@@ -24,10 +24,8 @@ NUM_PREDICTION_SAMPLES = 1000
 logger = logging.getLogger('python-esn.examples')
 
 
-def predict(training_inputs, training_outputs, inputs, correct_outputs):
+def predict(training_inputs, training_outputs, inputs):
     """Predict the next value for each given input."""
-    predicted_outputs = []
-
     esn = ESN(
         in_size=1,
         reservoir_size=1000,
@@ -40,21 +38,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    for i in range(len(inputs)):
-        input_date = inputs[i]
-        predicted_output = esn.predict(input_date)
-        predicted_output = predicted_output[0][0]
-
-        logger.debug(
-            '% f -> % f (Δ % f)',
-            input_date,
-            predicted_output,
-            correct_outputs[i] - predicted_output
-        )
-
-        predicted_outputs.append(predicted_output)
-
-    plot_results(correct_outputs, predicted_outputs, mode='Prediction')
+    return [esn.predict(input_date)[0][0] for input_date in inputs]
 
 
 def plot_results(reference, predicted, mode):
@@ -124,4 +108,6 @@ if __name__ == '__main__':
     setup_logging(args.log_level)
 
     data = load_data(args.data_file)
-    COMMANDS[args.sub_command](*data)
+    results = COMMANDS[args.sub_command](*data[:-1])
+
+    plot_results(data[-1], results, mode=args.sub_command)
