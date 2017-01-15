@@ -7,6 +7,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
+import logging
 
 import numpy as np
 from matplotlib.offsetbox import AnchoredText
@@ -18,6 +19,9 @@ from esn import ESN
 
 NUM_TRAINING_SAMPLES = 1000
 NUM_PREDICTION_SAMPLES = 1000
+
+
+logger = logging.getLogger('python-esn.examples')
 
 
 def main(training_inputs, training_outputs, inputs, correct_outputs):
@@ -40,12 +44,11 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
         predicted_output = esn.predict(input_date)
         predicted_output = predicted_output[0][0]
 
-        print(
-            '{:0< 18} -> {:0< 18} (Δ {:< 18})'.format(
-                input_date,
-                predicted_output,
-                correct_outputs[i] - predicted_output
-            )
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            input_date,
+            predicted_output,
+            correct_outputs[i] - predicted_output
         )
 
         predicted_outputs.append(predicted_output)
@@ -78,14 +81,31 @@ def load_data(file_name):
     return training_inputs, training_outputs, inputs, correct_outputs
 
 
+def setup_logging(level):
+    logging.basicConfig(
+        format='%(name)s.%(module)s::%(funcName)s [%(levelname)s]: %(message)s',
+        level=level.upper()
+    )
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '-l',
+        '--log-level',
+        metavar='LVL',
+        default='info',
+        choices=['debug', 'info', 'warning', 'error', 'critical'],
+        help='The lowest level to log (default: %(default)s)'
+    )
     parser.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
     args = parser.parse_args()
+
+    setup_logging(args.log_level)
 
     data = load_data(args.data_file)
     main(*data)
