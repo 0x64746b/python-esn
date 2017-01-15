@@ -9,6 +9,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import argparse
 
 import numpy as np
+from matplotlib.offsetbox import AnchoredText
+import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
 from esn import ESN
@@ -49,7 +51,13 @@ def main(training_inputs, training_outputs, inputs, correct_outputs):
         predicted_outputs.append(predicted_output)
 
     mse = mean_squared_error(correct_outputs, predicted_outputs)
-    print('\n MSE: {}'.format(mse))
+
+    plt.plot(correct_outputs, label='correct outputs')
+    plt.plot(predicted_outputs, label='predicted outputs')
+    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+    plt.gca().set_title('Mode: Prediction')
+    plt.legend()
+    plt.show()
 
 
 def load_data(file_name):
