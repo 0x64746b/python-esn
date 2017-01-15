@@ -24,13 +24,28 @@ NUM_PREDICTION_SAMPLES = 1000
 logger = logging.getLogger('python-esn.examples')
 
 
-class Predictor(object):
-    """Predict the next value for each given input."""
+class SubCommand(object):
 
     def __init__(self, training_inputs, training_outputs, inputs):
         self._training_inputs = training_inputs
         self._training_outputs = training_outputs
         self._inputs = inputs
+
+    def plot(self, reference, predicted):
+        self._debug(reference, predicted)
+
+        mse = mean_squared_error(reference, predicted)
+
+        plt.plot(reference, label='Reference')
+        plt.plot(predicted, label='Predicted')
+        plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+        plt.gca().set_title('Mode: {}'.format(self.__class__.__name__))
+        plt.legend()
+        plt.show()
+
+
+class Predictor(SubCommand):
+    """Predict the next value for each given input."""
 
     def __call__(self):
         esn = ESN(
@@ -46,16 +61,14 @@ class Predictor(object):
 
         return [esn.predict(input_date)[0][0] for input_date in self._inputs]
 
-
-def plot_results(reference, predicted, mode):
-    mse = mean_squared_error(reference, predicted)
-
-    plt.plot(reference, label='Reference')
-    plt.plot(predicted, label='Predicted')
-    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
-    plt.gca().set_title('Mode: {}'.format(mode))
-    plt.legend()
-    plt.show()
+    def _debug(self, reference, predicted):
+        for i, input_date in enumerate(self._inputs):
+            logger.debug(
+                '% f -> % f (Δ % f)',
+                input_date,
+                predicted[i],
+                reference[i] - predicted[i]
+            )
 
 
 def load_data(file_name):
@@ -114,8 +127,8 @@ if __name__ == '__main__':
     setup_logging(args.log_level)
 
     data = load_data(args.data_file)
-
     command = COMMANDS[args.sub_command](*data[:-1])
+
     results = command()
 
-    plot_results(data[-1], results, mode=args.sub_command)
+    command.plot(data[-1], results)
