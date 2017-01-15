@@ -24,7 +24,8 @@ NUM_PREDICTION_SAMPLES = 1000
 logger = logging.getLogger('python-esn.examples')
 
 
-def main(training_inputs, training_outputs, inputs, correct_outputs):
+def predict(training_inputs, training_outputs, inputs, correct_outputs):
+    """Predict the next value for each given input."""
     predicted_outputs = []
 
     esn = ESN(
@@ -88,9 +89,9 @@ def setup_logging(level):
     )
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+def parse_command_line_args():
+    main_command = argparse.ArgumentParser(description=__doc__)
+    main_command.add_argument(
         '-l',
         '--log-level',
         metavar='LVL',
@@ -98,14 +99,29 @@ if __name__ == '__main__':
         choices=['debug', 'info', 'warning', 'error', 'critical'],
         help='The lowest level to log (default: %(default)s)'
     )
-    parser.add_argument(
+    sub_commands = main_command.add_subparsers(
+        dest='sub_command',
+        metavar='sub-command'
+    )
+
+    predict_command = sub_commands.add_parser('predict', help=predict.__doc__)
+    predict_command.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
-    args = parser.parse_args()
+    return main_command.parse_args()
+
+
+COMMANDS = {
+    'predict': predict,
+}
+
+
+if __name__ == '__main__':
+    args = parse_command_line_args()
 
     setup_logging(args.log_level)
 
     data = load_data(args.data_file)
-    main(*data)
+    COMMANDS[args.sub_command](*data)
