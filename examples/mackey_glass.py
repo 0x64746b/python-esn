@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error
 from esn import ESN
 
 
-NUM_TRAINING_SAMPLES = 1000
+NUM_TRAINING_SAMPLES = 2000
 NUM_PREDICTION_SAMPLES = 1000
 
 
