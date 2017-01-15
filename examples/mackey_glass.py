@@ -31,24 +31,7 @@ class SubCommand(object):
         self._training_outputs = training_outputs
         self._inputs = inputs
 
-    def plot(self, reference, predicted):
-        self._debug(reference, predicted)
-
-        mse = mean_squared_error(reference, predicted)
-
-        plt.plot(reference, label='Reference')
-        plt.plot(predicted, label='Predicted')
-        plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
-        plt.gca().set_title('Mode: {}'.format(self.__class__.__name__))
-        plt.legend()
-        plt.show()
-
-
-class Predictor(SubCommand):
-    """Predict the next value for each given input."""
-
-    def __call__(self):
-        esn = ESN(
+        self._esn = ESN(
             in_size=1,
             reservoir_size=1000,
             out_size=1,
@@ -57,9 +40,36 @@ class Predictor(SubCommand):
             washout=100,
             smoothing_factor=0.0001
         )
-        esn.fit(self._training_inputs, self._training_outputs)
 
-        return [esn.predict(input_date)[0][0] for input_date in self._inputs]
+    def __call__(self):
+        self._esn.fit(self._training_inputs, self._training_outputs)
+
+        return self._calculate_outputs()
+
+
+    def plot(self, reference, predicted):
+        self._debug(reference, predicted)
+
+        mse = mean_squared_error(reference, predicted)
+        # mse = 'Disabled'
+
+        plt.plot(reference, label='Reference')
+        plt.plot(predicted, label='Predicted')
+        plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+        plt.gca().set_title('Mode: {}'.format(self.__class__.__name__))
+        plt.gca().set_ylim([-0.5, 0.5])
+        plt.legend()
+        plt.show()
+
+
+class Predictor(SubCommand):
+    """Predict the next value for each given input."""
+
+    def _calculate_outputs(self):
+        return [
+            self._esn.predict(input_date)[0][0]
+            for input_date in self._inputs
+        ]
 
     def _debug(self, reference, predicted):
         for i, input_date in enumerate(self._inputs):
@@ -69,6 +79,32 @@ class Predictor(SubCommand):
                 predicted[i],
                 reference[i] - predicted[i]
             )
+
+
+class Generator(SubCommand):
+    """Generate values from a starting point."""
+
+    def _calculate_outputs(self):
+
+        predicted_output = self._esn.predict(self._inputs[0])[0][0]
+        predicted_outputs = [predicted_output]
+
+        for i in range(len(self._inputs)):
+        # for i in range(200):
+            predicted_output = self._esn.predict(predicted_output)
+            predicted_outputs.append(predicted_output[0][0])
+
+        return predicted_outputs
+
+    def _debug(self, reference, predicted):
+        for i, predicted_date in enumerate(predicted[:-1]):
+            logger.debug(
+                '% f -> % f (Δ % f)',
+                predicted_date,
+                predicted[i+1],
+                reference[i+1] - predicted[i+1]
+            )
+
 
 
 def load_data(file_name):
@@ -107,8 +143,20 @@ def parse_command_line_args():
         metavar='sub-command'
     )
 
-    predict_command = sub_commands.add_parser('predict', help=Predictor.__doc__)
+    predict_command = sub_commands.add_parser(
+        'predict',
+        help=Predictor.__doc__
+    )
     predict_command.add_argument(
+        'data_file',
+        help='the file containing the data to learn'
+    )
+
+    generate_command = sub_commands.add_parser(
+        'generate',
+        help=Generator.__doc__
+    )
+    generate_command.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
@@ -118,6 +166,7 @@ def parse_command_line_args():
 
 COMMANDS = {
     'predict': Predictor,
+    'generate': Generator,
 }
 
 
