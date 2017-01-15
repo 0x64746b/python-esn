@@ -24,87 +24,91 @@ NUM_PREDICTION_SAMPLES = 1000
 logger = logging.getLogger('python-esn.examples')
 
 
-class SubCommand(object):
-
-    def __init__(self, training_inputs, training_outputs, inputs):
-        self._training_inputs = training_inputs
-        self._training_outputs = training_outputs
-        self._inputs = inputs
-
-        self._esn = ESN(
-            in_size=1,
-            reservoir_size=1000,
-            out_size=1,
-            spectral_radius=1.25,
-            leaking_rate=0.3,
-            washout=100,
-            smoothing_factor=0.0001
-        )
-
-    def __call__(self):
-        self._esn.fit(self._training_inputs, self._training_outputs)
-
-        return self._calculate_outputs()
-
-
-    def plot(self, reference, predicted):
-        self._debug(reference, predicted)
-
-        mse = mean_squared_error(reference, predicted)
-        # mse = 'Disabled'
-
-        plt.plot(reference, label='Reference')
-        plt.plot(predicted, label='Predicted')
-        plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
-        plt.gca().set_title('Mode: {}'.format(self.__class__.__name__))
-        plt.gca().set_ylim([-0.5, 0.5])
-        plt.legend()
-        plt.show()
-
-
-class Predictor(SubCommand):
+def predict(training_inputs, training_outputs, inputs, correct_outputs):
     """Predict the next value for each given input."""
 
-    def _calculate_outputs(self):
-        return [
-            self._esn.predict(input_date)[0][0]
-            for input_date in self._inputs
-        ]
-
-    def _debug(self, reference, predicted):
-        for i, input_date in enumerate(self._inputs):
+    def debug():
+        for i, input_date in enumerate(inputs):
             logger.debug(
                 '% f -> % f (Δ % f)',
                 input_date,
-                predicted[i],
-                reference[i] - predicted[i]
+                predicted_outputs[i],
+                correct_outputs[i] - predicted_outputs[i]
             )
 
+    esn = ESN(
+        in_size=1,
+        reservoir_size=1000,
+        out_size=1,
+        spectral_radius=1.25,
+        leaking_rate=0.3,
+        washout=100,
+        smoothing_factor=0.0001
+    )
 
-class Generator(SubCommand):
+    esn.fit(training_inputs, training_outputs)
+
+    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
+
+    debug()
+    plot_results(correct_outputs, predicted_outputs, mode='predict')
+
+
+def generate(training_inputs, training_outputs, inputs, correct_outputs):
     """Generate values from a starting point."""
 
-    def _calculate_outputs(self):
-
-        predicted_output = self._esn.predict(self._inputs[0])[0][0]
-        predicted_outputs = [predicted_output]
-
-        for i in range(len(self._inputs)):
-        # for i in range(200):
-            predicted_output = self._esn.predict(predicted_output)
-            predicted_outputs.append(predicted_output[0][0])
-
-        return predicted_outputs
-
-    def _debug(self, reference, predicted):
-        for i, predicted_date in enumerate(predicted[:-1]):
+    def debug():
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            inputs[0],
+            predicted_outputs[0],
+            correct_outputs[0] - predicted_outputs[0]
+        )
+        for i, predicted_date in enumerate(predicted_outputs[:-1]):
             logger.debug(
                 '% f -> % f (Δ % f)',
                 predicted_date,
-                predicted[i+1],
-                reference[i+1] - predicted[i+1]
+                predicted_outputs[i+1],
+                correct_outputs[i+1] - predicted_outputs[i+1]
             )
 
+    esn = ESN(
+        in_size=1,
+        reservoir_size=1000,
+        out_size=1,
+        spectral_radius=1.25,
+        leaking_rate=0.3,
+        washout=100,
+        smoothing_factor=0.0001
+    )
+
+    esn.fit(training_inputs, training_outputs)
+
+    predicted_output = esn.predict(inputs[0])[0][0]
+    predicted_outputs = [predicted_output]
+
+    for i in range(1, len(inputs)):
+        predicted_output = esn.predict(predicted_output)
+        predicted_outputs.append(predicted_output[0][0])
+
+    debug()
+    plot_results(correct_outputs, predicted_outputs, mode='generate')
+
+
+
+def plot_results(reference, predicted, mode):
+    try:
+        mse = mean_squared_error(reference, predicted)
+    except ValueError as error:
+        mse = error.message
+
+    plt.plot(reference, label='Reference')
+    plt.plot(predicted, label='Predicted')
+    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+    plt.gca().set_title('Mode: {}'.format(mode))
+    plt.gca().set_ylim([-0.5, 0.5])
+    plt.legend()
+    plt.show()
 
 
 def load_data(file_name):
@@ -145,7 +149,7 @@ def parse_command_line_args():
 
     predict_command = sub_commands.add_parser(
         'predict',
-        help=Predictor.__doc__
+        help=predict.__doc__
     )
     predict_command.add_argument(
         'data_file',
@@ -154,7 +158,7 @@ def parse_command_line_args():
 
     generate_command = sub_commands.add_parser(
         'generate',
-        help=Generator.__doc__
+        help=generate.__doc__
     )
     generate_command.add_argument(
         'data_file',
@@ -165,8 +169,8 @@ def parse_command_line_args():
 
 
 COMMANDS = {
-    'predict': Predictor,
-    'generate': Generator,
+    'predict': predict,
+    'generate': generate,
 }
 
 
@@ -176,8 +180,4 @@ if __name__ == '__main__':
     setup_logging(args.log_level)
 
     data = load_data(args.data_file)
-    command = COMMANDS[args.sub_command](*data[:-1])
-
-    results = command()
-
-    command.plot(data[-1], results)
+    COMMANDS[args.sub_command](*data)
