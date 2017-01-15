@@ -117,7 +117,8 @@ def load_data(file_name):
     training_inputs = data[:NUM_TRAINING_SAMPLES]
     training_outputs = data[None, 1:NUM_TRAINING_SAMPLES+1]
 
-    np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
+    # consume training data
+    data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
 
     inputs = data[:NUM_PREDICTION_SAMPLES]
     correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
