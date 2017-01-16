@@ -11,48 +11,67 @@ from __future__ import (
     unicode_literals,
 )
 
-from itertools import chain, repeat
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-MAX_FREQUENCY = 5
 NUM_PERIODS = 50
-NUM_SAMPLING_POINTS = 201
+SAMPLES_PER_PERIOD = 201
+MAX_FREQUENCY = 5
+MIN_PERIOD = 2
+MAX_PERIOD = 10
 
 
-def generate_signal(num_periods, num_sampling_points, max_frequency):
-    half_frequencies = [
-        np.random.randint(1, max_frequency+1)
-        for i in range(int(num_periods/2))
-    ]
-
-    # make sure each frequency persists for at least 2 periods
-    frequencies = list(chain.from_iterable(
-        zip(half_frequencies, half_frequencies)
-    ))
-
+def generate_signal(
+        num_periods,
+        samples_per_period,
+        max_frequency,
+        min_period,
+        max_period
+):
+    frequencies = []
     signal = []
-    for frequency in frequencies:
-        sampling_points = np.linspace(0, 2 * np.pi, num_sampling_points)
-        period = np.sin(frequency * sampling_points[:-1])
-        signal.extend(period)
+
+    target_length = num_periods * samples_per_period
+
+    while len(signal) < target_length:
+        frequency = np.random.randint(1, max_frequency + 1)
+        section_length = min(
+            np.random.randint(min_period, max_period + 1),
+            target_length - len(signal)
+        )
+
+        print('Frequency {} over {} periods'.format(frequency, section_length))
+
+        sampling_points = np.linspace(
+            0,
+            2 * np.pi * section_length,
+            samples_per_period * section_length
+        )
+        section = np.sin(frequency * sampling_points[:-1])
+        signal.extend(section)
+        frequencies.extend([frequency] * samples_per_period * section_length)
 
     return frequencies, signal
-
 
 
 if __name__ == '__main__':
     input_frequencies, signal = generate_signal(
         NUM_PERIODS,
-        NUM_SAMPLING_POINTS,
-        MAX_FREQUENCY
+        SAMPLES_PER_PERIOD,
+        MAX_FREQUENCY,
+        MIN_PERIOD,
+        MAX_PERIOD,
     )
-    print('input frequency per period:', input_frequencies)
 
-    # plot first 10 periods
-    plt.plot(signal[:NUM_SAMPLING_POINTS * 10], label='Signal')
-    plt.plot(list(chain.from_iterable(repeat(e, NUM_SAMPLING_POINTS) for e in [frequency / 10 for frequency in input_frequencies]))[:NUM_SAMPLING_POINTS * 10], label='Input frequency')
-    plt.title('First 10 periods')
+    # plot some periods
+    plt.plot(signal[:SAMPLES_PER_PERIOD * 30], label='Signal')
+    plt.plot(
+        [
+            frequency/10
+            for frequency in input_frequencies[:SAMPLES_PER_PERIOD * 30]
+        ],
+        label='Input frequency'
+    )
+    plt.title('First 30 periods')
     plt.show()
