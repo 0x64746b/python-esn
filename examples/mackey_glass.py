@@ -27,15 +27,6 @@ logger = logging.getLogger('python-esn.examples')
 def predict(training_inputs, training_outputs, inputs, correct_outputs):
     """Predict the next value for each given input."""
 
-    def debug():
-        for i, input_date in enumerate(inputs):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                input_date,
-                predicted_outputs[i],
-                correct_outputs[i] - predicted_outputs[i]
-            )
-
     esn = ESN(
         in_size=1,
         reservoir_size=1000,
@@ -50,27 +41,20 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
 
     predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
 
-    debug()
+    # debug
+    for i, input_date in enumerate(inputs):
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            input_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
     plot_results(correct_outputs, predicted_outputs, mode='predict')
 
 
 def generate(training_inputs, training_outputs, inputs, correct_outputs):
     """Generate values from a starting point."""
-
-    def debug():
-        logger.debug(
-            '% f -> % f (Δ % f)',
-            inputs[0],
-            predicted_outputs[0],
-            correct_outputs[0] - predicted_outputs[0]
-        )
-        for i, predicted_date in enumerate(predicted_outputs[:-1]):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                predicted_date,
-                predicted_outputs[i+1],
-                correct_outputs[i+1] - predicted_outputs[i+1]
-            )
 
     esn = ESN(
         in_size=1,
@@ -88,7 +72,15 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
     for i in range(1, len(inputs)):
         predicted_outputs.append(esn.predict(predicted_outputs[i-1])[0][0])
 
-    debug()
+    # debug
+    for i, predicted_date in enumerate([inputs[0]] + predicted_outputs[:-1]):
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            predicted_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
     plot_results(correct_outputs, predicted_outputs, mode='generate')
 
 
