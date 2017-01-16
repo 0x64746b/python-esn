@@ -122,22 +122,22 @@ def load_data(file_name):
     return training_inputs, training_outputs, inputs, correct_outputs
 
 
-def setup_logging(level):
+def setup_logging(verbosity):
     logging.basicConfig(
         format='%(name)s.%(module)s::%(funcName)s [%(levelname)s]: %(message)s',
-        level=level.upper()
+        level=max(logging.DEBUG, logging.WARNING - verbosity * 10)
     )
 
 
 def parse_command_line_args():
     main_command = argparse.ArgumentParser(description=__doc__)
     main_command.add_argument(
-        '-l',
-        '--log-level',
-        metavar='LVL',
-        default='info',
-        choices=['debug', 'info', 'warning', 'error', 'critical'],
-        help='The lowest level to log (default: %(default)s)'
+        '-v',
+        '--verbose',
+        dest='verbosity',
+        action='count',
+        default=0,
+        help='Increase the log level with each use'
     )
     sub_commands = main_command.add_subparsers(
         dest='sub_command',
@@ -174,7 +174,7 @@ COMMANDS = {
 if __name__ == '__main__':
     args = parse_command_line_args()
 
-    setup_logging(args.log_level)
+    setup_logging(args.verbosity)
 
     data = load_data(args.data_file)
     COMMANDS[args.sub_command](*data)
