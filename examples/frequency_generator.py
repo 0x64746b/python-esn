@@ -62,13 +62,13 @@ if __name__ == '__main__':
     )
 
     # plot some periods
-    plt.plot(signal[:SAMPLES_PER_PERIOD * 30], label='Signal')
+    plt.plot(signal[:4000], label='Signal')
     plt.plot(
         [
             frequency/10
-            for frequency in input_frequencies[:SAMPLES_PER_PERIOD * 30]
+            for frequency in input_frequencies[:4000]
         ],
         label='Input frequency'
     )
-    plt.title('First 30 periods')
+    plt.title('Start of signal')
     plt.show()
