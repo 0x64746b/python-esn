@@ -16,41 +16,40 @@ import numpy as np
 
 
 NUM_PERIODS = 50
-SAMPLES_PER_PERIOD = 201
+SAMPLES_PER_PERIOD = 200  # without endpoint
+NUM_FREQUENCY_CHANGES = 25
 MAX_FREQUENCY = 5
-MIN_PERIOD = 2
-MAX_PERIOD = 10
 
 
 def generate_signal(
         num_periods,
         samples_per_period,
+        num_frequency_changes,
         max_frequency,
-        min_period,
-        max_period
 ):
     frequencies = []
     signal = []
 
-    target_length = num_periods * samples_per_period
+    num_sampling_points = num_periods * samples_per_period
 
-    while len(signal) < target_length:
+    sampling_points = np.linspace(
+        0,
+        num_periods * 2 * np.pi,
+        num_sampling_points,
+        endpoint=False
+    )
+
+    frequency_intervals = np.sort(np.append(
+        [0, num_sampling_points],
+        np.random.randint(0, num_sampling_points, num_frequency_changes)
+    ))
+
+    for i in range(num_frequency_changes + 1):
         frequency = np.random.randint(1, max_frequency + 1)
-        section_length = min(
-            np.random.randint(min_period, max_period + 1),
-            target_length - len(signal)
-        )
 
-        print('Frequency {} over {} periods'.format(frequency, section_length))
-
-        sampling_points = np.linspace(
-            0,
-            2 * np.pi * section_length,
-            samples_per_period * section_length
-        )
-        section = np.sin(frequency * sampling_points[:-1])
-        signal.extend(section)
-        frequencies.extend([frequency] * samples_per_period * section_length)
+        for sampling_point in range(frequency_intervals[i], frequency_intervals[i + 1]):
+            frequencies.append(frequency)
+            signal.append(np.sin(frequency * sampling_points[sampling_point]))
 
     return frequencies, signal
 
@@ -59,9 +58,8 @@ if __name__ == '__main__':
     input_frequencies, signal = generate_signal(
         NUM_PERIODS,
         SAMPLES_PER_PERIOD,
+        NUM_FREQUENCY_CHANGES,
         MAX_FREQUENCY,
-        MIN_PERIOD,
-        MAX_PERIOD,
     )
 
     # plot some periods
