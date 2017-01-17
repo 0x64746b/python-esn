@@ -44,13 +44,11 @@ def generate_signal(
         np.random.randint(0, num_sampling_points, num_frequency_changes)
     ))
 
-    for i in range(num_frequency_changes + 1):
+    for (start, end) in zip(frequency_intervals, frequency_intervals[1:]):
         frequency = np.random.randint(1, max_frequency + 1)
 
-        frequencies[frequency_intervals[i]:frequency_intervals[i + 1]] = frequency
-        signal[frequency_intervals[i]:frequency_intervals[i + 1]] = np.sin(
-            frequency * sampling_points[frequency_intervals[i]:frequency_intervals[i + 1]]
-        )
+        frequencies[start:end] = frequency
+        signal[start:end] = np.sin(frequency * sampling_points[start:end])
 
     return frequencies, signal
 
