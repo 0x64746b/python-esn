@@ -27,10 +27,10 @@ def generate_signal(
         num_frequency_changes,
         max_frequency,
 ):
-    frequencies = []
-    signal = []
-
     num_sampling_points = num_periods * samples_per_period
+
+    frequencies = np.zeros(num_sampling_points)
+    signal = np.zeros(num_sampling_points)
 
     sampling_points = np.linspace(
         0,
@@ -47,9 +47,10 @@ def generate_signal(
     for i in range(num_frequency_changes + 1):
         frequency = np.random.randint(1, max_frequency + 1)
 
-        for sampling_point in range(frequency_intervals[i], frequency_intervals[i + 1]):
-            frequencies.append(frequency)
-            signal.append(np.sin(frequency * sampling_points[sampling_point]))
+        frequencies[frequency_intervals[i]:frequency_intervals[i + 1]] = frequency
+        signal[frequency_intervals[i]:frequency_intervals[i + 1]] = np.sin(
+            frequency * sampling_points[frequency_intervals[i]:frequency_intervals[i + 1]]
+        )
 
     return frequencies, signal
 
