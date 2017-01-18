@@ -15,14 +15,14 @@ from matplotlib import pyplot as plt, ticker
 import numpy as np
 
 
-NUM_PERIODS = 50
+SIGNAL_LENGTH = 10000
 SAMPLES_PER_PERIOD = 200  # without endpoint
 NUM_FREQUENCY_CHANGES = 25
 MAX_FREQUENCY = 5
 
 
 def generate_signal(
-        num_periods,
+        num_sampling_points,
         samples_per_period,
         num_frequency_changes,
         max_frequency,
@@ -32,7 +32,6 @@ def generate_signal(
 
     Inspired by https://github.com/cknd/pyESN/blob/master/freqgen.ipynb.
     """
-    num_sampling_points = num_periods * samples_per_period
     norm_sampling_distance = 2 * np.pi / samples_per_period
 
     frequencies = np.zeros(num_sampling_points)
@@ -56,7 +55,7 @@ def generate_signal(
 
 if __name__ == '__main__':
     input_frequencies, signal = generate_signal(
-        NUM_PERIODS,
+        SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
         NUM_FREQUENCY_CHANGES,
         MAX_FREQUENCY,
