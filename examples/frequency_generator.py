@@ -11,14 +11,23 @@ from __future__ import (
     unicode_literals,
 )
 
+import logging
+
 from matplotlib import pyplot as plt, ticker
 import numpy as np
 
+from esn import ESN
 
-SIGNAL_LENGTH = 10000
+
+SIGNAL_LENGTH = 15000
 SAMPLES_PER_PERIOD = 200  # without endpoint
-NUM_FREQUENCY_CHANGES = 25
+NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
+
+NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
+
+
+logger = logging.getLogger('python-esn.examples')
 
 
 def generate_signal(
@@ -54,20 +63,63 @@ def generate_signal(
 
 
 if __name__ == '__main__':
-    input_frequencies, signal = generate_signal(
+    logging.basicConfig(level=logging.DEBUG)
+
+    frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
         NUM_FREQUENCY_CHANGES,
         MAX_FREQUENCY,
     )
 
+    training_inputs = np.array(zip(
+        frequencies[:NUM_TRAINING_SAMPLES],
+        signal[:NUM_TRAINING_SAMPLES])
+    ).reshape(NUM_TRAINING_SAMPLES, 2, 1)
+    # TODO: Check dimensionality. Do we *really* need this? Cf `correct_outputs`
+    training_outputs = signal[None, 1:NUM_TRAINING_SAMPLES + 1]
+
+    print(training_inputs.shape)
+
+    # consume training data
+    frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
+    signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
+
+    inputs = np.array(zip(frequencies[:-1], signal[:-1])).reshape(len(frequencies[:-1]), 2, 1)
+    correct_outputs = signal[1:]
+
+    esn = ESN(
+        in_size=2,
+        reservoir_size=200,
+        out_size=1,
+        spectral_radius=0.25,
+        leaking_rate=0.3,
+        washout=100,
+        smoothing_factor=0.0001
+    )
+
+    esn.fit(training_inputs, training_outputs)
+
+    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
+
+    # debug
+    for i, input_date in enumerate(inputs):
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            input_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+
     # plot some periods
-    plt.plot(signal[:4000], label='Signal')
+    plt.plot(signal[:4000], label='Reference')
+    plt.plot(predicted_outputs[:4000], label='Predicted')
     plt.plot(
         [
-            frequency/10
-            for frequency in input_frequencies[:4000]
-        ],
+            frequency / 10
+            for frequency in frequencies[:4000]
+            ],
         label='Input frequency'
     )
     plt.gca().xaxis.set_major_locator(
@@ -75,4 +127,5 @@ if __name__ == '__main__':
     )
     plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
     plt.title('Start of signal')
+    plt.legend()
     plt.show()
