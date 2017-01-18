@@ -11,7 +11,7 @@ from __future__ import (
     unicode_literals,
 )
 
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt, ticker
 import numpy as np
 
 
@@ -71,5 +71,9 @@ if __name__ == '__main__':
         ],
         label='Input frequency'
     )
+    plt.gca().xaxis.set_major_locator(
+        ticker.MultipleLocator(SAMPLES_PER_PERIOD)
+    )
+    plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
     plt.title('Start of signal')
     plt.show()
