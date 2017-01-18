@@ -27,17 +27,16 @@ def generate_signal(
         num_frequency_changes,
         max_frequency,
 ):
+    """
+    Generate a sine signal with varying frequency.
+
+    Inspired by https://github.com/cknd/pyESN/blob/master/freqgen.ipynb.
+    """
     num_sampling_points = num_periods * samples_per_period
+    norm_sampling_distance = 2 * np.pi / samples_per_period
 
     frequencies = np.zeros(num_sampling_points)
     signal = np.zeros(num_sampling_points)
-
-    sampling_points = np.linspace(
-        0,
-        num_periods * 2 * np.pi,
-        num_sampling_points,
-        endpoint=False
-    )
 
     frequency_intervals = np.sort(np.append(
         [0, num_sampling_points],
@@ -45,10 +44,12 @@ def generate_signal(
     ))
 
     for (start, end) in zip(frequency_intervals, frequency_intervals[1:]):
-        frequency = np.random.randint(1, max_frequency + 1)
+        frequencies[start:end] = np.random.randint(1, max_frequency + 1)
 
-        frequencies[start:end] = frequency
-        signal[start:end] = np.sin(frequency * sampling_points[start:end])
+    sampling_point = 0
+    for i in range(num_sampling_points):
+        sampling_point += norm_sampling_distance * frequencies[i]
+        signal[i] = np.sin(sampling_point)
 
     return frequencies, signal
 
