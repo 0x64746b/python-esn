@@ -22,7 +22,7 @@ from esn import ESN
 
 SIGNAL_LENGTH = 15000
 SAMPLES_PER_PERIOD = 200  # without endpoint
-NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
+NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 2000)
 MAX_FREQUENCY = 5
 
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
@@ -61,9 +61,42 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
     plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
 
 
+def generate(training_inputs, training_outputs, inputs, correct_outputs):
+    """Generate values from a starting point."""
+
+    esn = ESN(
+        in_size=2,
+        reservoir_size=1000,
+        out_size=1,
+        spectral_radius=0.25,
+        leaking_rate=0.5,
+        washout=1000,
+        smoothing_factor=0.0001
+    )
+
+    esn.fit(training_inputs, training_outputs)
+
+    predicted_outputs = [esn.predict(inputs[0])[0][0]]
+    for i in range(1, len(inputs)):
+        next_input = np.array([[inputs[i][0][0]], [predicted_outputs[i-1]]])
+        predicted_outputs.append(esn.predict(next_input)[0][0])
+
+    # debug
+    for i, input_date in enumerate(inputs):
+        logger.debug(
+            '% f | % f -> % f (Δ % f)',
+            input_date[0],
+            input_date[1],
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+    plot_results(inputs, correct_outputs, predicted_outputs, mode='generate')
+
+
 def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     """Plot the start of the signal."""
-    plot_length = 4000
+    plot_length = 3000
 
     plt.plot(
         [
@@ -79,6 +112,7 @@ def plot_results(inputs, correct_outputs, predicted_outputs, mode):
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
     plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
+    plt.gca().set_ylim([-1.5, 1.5])
     plt.title('Mode: {} (Extract: signal[:{}])'.format(mode, plot_length))
     plt.legend()
     plt.show()
@@ -168,11 +202,17 @@ def parse_command_line_args():
         help=predict.__doc__
     )
 
+    sub_commands.add_parser(
+        'generate',
+        help=generate.__doc__
+    )
+
     return main_command.parse_args()
 
 
 COMMANDS = {
     'predict': predict,
+    'generate': generate,
 }
 
 
