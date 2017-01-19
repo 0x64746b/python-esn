@@ -30,6 +30,29 @@ NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 logger = logging.getLogger('python-esn.examples')
 
 
+def plot_results(inputs, correct_outputs, predicted_outputs, mode):
+    """Plot the start of the signal."""
+    plot_length = 4000
+
+    plt.plot(
+        [
+            input_date[0] / 10
+            for input_date in inputs[:plot_length]
+        ],
+        color='r',
+        label='Input frequency'
+    )
+    plt.plot(correct_outputs[:plot_length], label='Correct outputs')
+    plt.plot(predicted_outputs[:plot_length], label='Predicted outputs')
+    plt.gca().xaxis.set_major_locator(
+        ticker.MultipleLocator(SAMPLES_PER_PERIOD)
+    )
+    plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
+    plt.title('Mode: {} (Extract: signal[:{}])'.format(mode, plot_length))
+    plt.legend()
+    plt.show()
+
+
 def generate_signal(
         num_sampling_points,
         samples_per_period,
@@ -116,20 +139,4 @@ if __name__ == '__main__':
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    # plot some periods
-    plt.plot(correct_outputs[:4000], label='Reference')
-    plt.plot(predicted_outputs[:4000], label='Predicted')
-    plt.plot(
-        [
-            input_date[0] / 10
-            for input_date in inputs[:4000]
-        ],
-        label='Input frequency'
-    )
-    plt.gca().xaxis.set_major_locator(
-        ticker.MultipleLocator(SAMPLES_PER_PERIOD)
-    )
-    plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
-    plt.title('Start of signal')
-    plt.legend()
-    plt.show()
+    plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
