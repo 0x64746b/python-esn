@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Learn the Mackey-Glass equation."""
+"""Learn a sine signal with a varying frequency."""
 
 
 from __future__ import (
@@ -11,6 +11,7 @@ from __future__ import (
     unicode_literals,
 )
 
+import argparse
 import logging
 
 from matplotlib import pyplot as plt, ticker
@@ -31,6 +32,8 @@ logger = logging.getLogger('python-esn.examples')
 
 
 def predict(training_inputs, training_outputs, inputs, correct_outputs):
+    """Predict the next value for each given input."""
+
     esn = ESN(
         in_size=2,
         reservoir_size=200,
@@ -138,8 +141,45 @@ def generate_data():
     return training_inputs, training_outputs, inputs, correct_outputs
 
 
+def setup_logging(verbosity):
+    logging.basicConfig(
+        format='%(name)s.%(module)s::%(funcName)s [%(levelname)s]: %(message)s',
+        level=max(logging.DEBUG, logging.WARNING - verbosity * 10)
+    )
+
+
+def parse_command_line_args():
+    main_command = argparse.ArgumentParser(description=__doc__)
+    main_command.add_argument(
+        '-v',
+        '--verbose',
+        dest='verbosity',
+        action='count',
+        default=0,
+        help='Increase the log level with each use'
+    )
+    sub_commands = main_command.add_subparsers(
+        dest='sub_command',
+        metavar='sub-command'
+    )
+
+    sub_commands.add_parser(
+        'predict',
+        help=predict.__doc__
+    )
+
+    return main_command.parse_args()
+
+
+COMMANDS = {
+    'predict': predict,
+}
+
+
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    args = parse_command_line_args()
+
+    setup_logging(args.verbosity)
 
     data = generate_data()
-    predict(*data)
+    COMMANDS[args.sub_command](*data)
