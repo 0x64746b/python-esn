@@ -30,6 +30,34 @@ NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 logger = logging.getLogger('python-esn.examples')
 
 
+def predict(training_inputs, training_outputs, inputs, correct_outputs):
+    esn = ESN(
+        in_size=2,
+        reservoir_size=200,
+        out_size=1,
+        spectral_radius=0.25,
+        leaking_rate=0.3,
+        washout=100,
+        smoothing_factor=0.0001
+    )
+
+    esn.fit(training_inputs, training_outputs)
+
+    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
+
+    # debug
+    for i, input_date in enumerate(inputs):
+        logger.debug(
+            '% f | % f -> % f (Δ % f)',
+            input_date[0],
+            input_date[1],
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+    plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
+
+
 def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     """Plot the start of the signal."""
     plot_length = 4000
@@ -113,30 +141,5 @@ def generate_data():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    training_inputs, training_outputs, inputs, correct_outputs = generate_data()
-
-    esn = ESN(
-        in_size=2,
-        reservoir_size=200,
-        out_size=1,
-        spectral_radius=0.25,
-        leaking_rate=0.3,
-        washout=100,
-        smoothing_factor=0.0001
-    )
-
-    esn.fit(training_inputs, training_outputs)
-
-    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
-
-    # debug
-    for i, input_date in enumerate(inputs):
-        logger.debug(
-            '% f | % f -> % f (Δ % f)',
-            input_date[0],
-            input_date[1],
-            predicted_outputs[i],
-            correct_outputs[i] - predicted_outputs[i]
-        )
-
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
+    data = generate_data()
+    predict(*data)
