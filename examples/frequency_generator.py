@@ -62,9 +62,7 @@ def generate_signal(
     return frequencies, signal
 
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-
+def generate_data():
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
@@ -79,14 +77,20 @@ if __name__ == '__main__':
     # TODO: Check dimensionality. Do we *really* need this? Cf `correct_outputs`
     training_outputs = signal[None, 1:NUM_TRAINING_SAMPLES + 1]
 
-    print(training_inputs.shape)
-
     # consume training data
     frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
     signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
 
     inputs = np.array(zip(frequencies[:-1], signal[:-1])).reshape(len(frequencies[:-1]), 2, 1)
     correct_outputs = signal[1:]
+
+    return training_inputs, training_outputs, inputs, correct_outputs
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
+    training_inputs, training_outputs, inputs, correct_outputs = generate_data()
 
     esn = ESN(
         in_size=2,
@@ -113,13 +117,13 @@ if __name__ == '__main__':
 
 
     # plot some periods
-    plt.plot(signal[:4000], label='Reference')
+    plt.plot(correct_outputs[:4000], label='Reference')
     plt.plot(predicted_outputs[:4000], label='Predicted')
     plt.plot(
         [
-            frequency / 10
-            for frequency in frequencies[:4000]
-            ],
+            input_date[0] / 10
+            for input_date in inputs[:4000]
+        ],
         label='Input frequency'
     )
     plt.gca().xaxis.set_major_locator(
