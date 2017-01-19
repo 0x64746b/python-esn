@@ -109,12 +109,12 @@ if __name__ == '__main__':
     # debug
     for i, input_date in enumerate(inputs):
         logger.debug(
-            '% f -> % f (Δ % f)',
-            input_date,
+            '% f | % f -> % f (Δ % f)',
+            input_date[0],
+            input_date[1],
             predicted_outputs[i],
             correct_outputs[i] - predicted_outputs[i]
         )
-
 
     # plot some periods
     plt.plot(correct_outputs[:4000], label='Reference')
