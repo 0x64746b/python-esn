@@ -99,10 +99,7 @@ def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     plot_length = 3000
 
     plt.plot(
-        [
-            input_date[0] / 10
-            for input_date in inputs[:plot_length]
-        ],
+        [input_date[0] for input_date in inputs[:plot_length]],
         color='r',
         label='Input frequency'
     )
@@ -151,12 +148,17 @@ def generate_signal(
 
 
 def generate_data():
+    min_frequency = 1
+
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
         NUM_FREQUENCY_CHANGES,
         MAX_FREQUENCY,
     )
+
+    # scale frequencies to [-1, 1]
+    frequencies = 2 * (((frequencies - min_frequency) / (MAX_FREQUENCY - min_frequency)) - 0.5)
 
     training_inputs = np.array(zip(
         frequencies[:NUM_TRAINING_SAMPLES],
