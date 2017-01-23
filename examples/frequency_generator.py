@@ -96,21 +96,19 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
 def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     """Plot the start of the signal."""
-    plot_length = 3000
-
     plt.plot(
-        [input_date[0] for input_date in inputs[:plot_length]],
+        [input_date[0] for input_date in inputs],
         color='r',
         label='Input frequency'
     )
-    plt.plot(correct_outputs[:plot_length], label='Correct outputs')
-    plt.plot(predicted_outputs[:plot_length], label='Predicted outputs')
+    plt.plot(correct_outputs, label='Correct outputs')
+    plt.plot(predicted_outputs, label='Predicted outputs')
     plt.gca().xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
     plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
     plt.gca().set_ylim([-1.5, 1.5])
-    plt.title('Mode: {} (Extract: signal[:{}])'.format(mode, plot_length))
+    plt.title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
 
