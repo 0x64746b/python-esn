@@ -158,7 +158,7 @@ def generate_data():
     )
 
     # scale frequencies to [-1, 1]
-    frequencies = frequencies / MAX_FREQUENCY
+    frequencies = 2 * (((frequencies - min_frequency) / (MAX_FREQUENCY - min_frequency)) - 0.5)
 
     training_inputs = np.array(zip(
         frequencies[:NUM_TRAINING_SAMPLES],
