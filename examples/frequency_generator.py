@@ -15,7 +15,9 @@ import argparse
 import logging
 
 from matplotlib import pyplot as plt, ticker
+from matplotlib.offsetbox import AnchoredText
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 from esn import ESN
 
@@ -96,7 +98,10 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
 
 def plot_results(inputs, correct_outputs, predicted_outputs, mode):
-    """Plot the start of the signal."""
+    try:
+        mse = mean_squared_error(correct_outputs, predicted_outputs)
+    except ValueError as error:
+        mse = error.message
     plt.plot(
         [input_date[0] for input_date in inputs],
         color='r',
@@ -107,6 +112,7 @@ def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     plt.gca().xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
+    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
     plt.title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
