@@ -70,7 +70,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         reservoir_size=1000,
         out_size=1,
         spectral_radius=0.25,
-        leaking_rate=0.5,
+        leaking_rate=0.1,
         washout=1000,
         smoothing_factor=0.0001
     )
