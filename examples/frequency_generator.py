@@ -107,8 +107,6 @@ def plot_results(inputs, correct_outputs, predicted_outputs, mode):
     plt.gca().xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
-    plt.yticks([-1, -0.5, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 1])
-    plt.gca().set_ylim([-1.5, 1.5])
     plt.title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
