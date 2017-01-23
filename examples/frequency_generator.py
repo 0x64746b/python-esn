@@ -83,11 +83,11 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         predicted_outputs.append(esn.predict(next_input)[0][0])
 
     # debug
-    for i, input_date in enumerate(inputs):
+    for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
-            input_date[0],
-            input_date[1],
+            inputs[i][0],
+            predicted_date,
             predicted_outputs[i],
             correct_outputs[i] - predicted_outputs[i]
         )
