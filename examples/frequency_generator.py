@@ -21,8 +21,8 @@ from esn import ESN
 
 
 SIGNAL_LENGTH = 15000
-SAMPLES_PER_PERIOD = 200  # without endpoint
-NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 2000)
+SAMPLES_PER_PERIOD = 300  # without endpoint
+NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
 
 NOISE_FACTOR = 0.03
@@ -67,7 +67,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn = ESN(
         in_size=2,
-        reservoir_size=1000,
+        reservoir_size=200,
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.1,
