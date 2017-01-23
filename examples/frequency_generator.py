@@ -25,6 +25,7 @@ SAMPLES_PER_PERIOD = 200  # without endpoint
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 2000)
 MAX_FREQUENCY = 5
 
+NOISE_FACTOR = 0.03
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 
 
@@ -158,10 +159,19 @@ def generate_data():
     # scale frequencies to [-1, 1]
     frequencies = 2 * (((frequencies - min_frequency) / (MAX_FREQUENCY - min_frequency)) - 0.5)
 
+    # add noise to the signal to help stabilize the amplitude
+    noisy_signal = signal + np.random.normal(0, 1, SIGNAL_LENGTH) * NOISE_FACTOR
+
+    plt.plot(
+        noisy_signal[NUM_TRAINING_SAMPLES+1:],
+        color='0.70',
+        label='Noisy signal'
+    )
+
     training_inputs = np.array(zip(
         frequencies[:NUM_TRAINING_SAMPLES],
-        signal[:NUM_TRAINING_SAMPLES])
-    ).reshape(NUM_TRAINING_SAMPLES, 2, 1)
+        noisy_signal[:NUM_TRAINING_SAMPLES]
+    )).reshape(NUM_TRAINING_SAMPLES, 2, 1)
     # TODO: Check dimensionality. Do we *really* need this? Cf `correct_outputs`
     training_outputs = signal[None, 1:NUM_TRAINING_SAMPLES + 1]
 
