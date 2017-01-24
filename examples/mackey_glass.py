@@ -103,7 +103,10 @@ def load_data(file_name):
     data = np.loadtxt(file_name)
 
     training_inputs = data[:NUM_TRAINING_SAMPLES]
-    training_outputs = data[None, 1:NUM_TRAINING_SAMPLES+1]
+    training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
+        1,  # out_size
+        NUM_TRAINING_SAMPLES
+    )
 
     # consume training data
     data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])

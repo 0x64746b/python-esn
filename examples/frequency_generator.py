@@ -176,14 +176,21 @@ def generate_data():
         frequencies[:NUM_TRAINING_SAMPLES],
         noisy_signal[:NUM_TRAINING_SAMPLES]
     )).reshape(NUM_TRAINING_SAMPLES, 2, 1)
-    # TODO: Check dimensionality. Do we *really* need this? Cf `correct_outputs`
-    training_outputs = signal[None, 1:NUM_TRAINING_SAMPLES + 1]
+
+    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].reshape(
+        1,  # out_size
+        NUM_TRAINING_SAMPLES
+    )
 
     # consume training data
     frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
     signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = np.array(zip(frequencies[:-1], signal[:-1])).reshape(len(frequencies[:-1]), 2, 1)
+    inputs = np.array(zip(
+        frequencies[:-1],
+        signal[:-1]
+    )).reshape(len(frequencies[:-1]), 2, 1)
+
     correct_outputs = signal[1:]
 
     return training_inputs, training_outputs, inputs, correct_outputs
