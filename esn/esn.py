@@ -67,15 +67,15 @@ class ESN(object):
         S = np.zeros((self.N + self.K + 1, len(u)))
 
         # initial reservoir state
-        self.x = np.zeros((self.N, 1))
+        self.x = np.zeros(self.N)
 
         for n in range(len(u)):
             self.x = (1 - self.alpha) * self.x + self.alpha * np.tanh(
-                 np.dot(self.W_in, np.vstack((1, u[n]))) +
+                 np.dot(self.W_in, np.hstack((1, u[n]))) +
                  np.dot(self.W, self.x)
                  # TODO Add `W_fb` here
             )
-            S[:, n] = np.vstack((1, u[n], self.x))[:, 0]
+            S[:, n] = np.hstack((1, u[n], self.x))
 
         return S
 
@@ -101,8 +101,8 @@ class ESN(object):
     def predict(self, input_date):
         self.x = (1 - self.alpha) * self.x + \
             self.alpha * np.tanh(
-                np.dot(self.W_in, np.vstack((1, input_date))) +
+                np.dot(self.W_in, np.hstack((1, input_date))) +
                 np.dot(self.W, self.x)
                 # TODO Add `W_fb` here
             )
-        return np.dot(self.W_out, np.vstack((1, input_date, self.x)))
+        return np.dot(self.W_out, np.hstack((1, input_date, self.x)))
