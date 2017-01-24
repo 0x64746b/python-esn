@@ -54,14 +54,7 @@ class ESN(object):
         S = np.delete(S, np.s_[:self.washout], 1)
         output_data = np.delete(output_data, np.s_[:self.washout], 1)
 
-        # compute output weights
-        R = np.dot(S, S.T)
-        P = np.dot(output_data, S.T)
-
-        self.W_out = np.dot(
-            P,
-            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N))
-        )
+        self.W_out = self._compute_output_weights(S, output_data)
 
     def _harvest_reservoir_states(self, u):
         """
@@ -85,6 +78,25 @@ class ESN(object):
             S[:, n] = np.vstack((1, u[n], self.x))[:, 0]
 
         return S
+
+    def _compute_output_weights(self, S, D):
+        """
+        Compute the output weights.
+
+        They are the linear regression weights of the teacher outputs on the
+        reservoir states.
+
+        :param S: The state collection matrix of size `(N + K + 1) x n_max`
+        :param D: The teacher output collection matrix of size `L x n_max`
+        :return: The output weights of size `L x (N + K + 1)`
+        """
+        R = np.dot(S, S.T)
+        P = np.dot(D, S.T)
+
+        return np.dot(
+            P,
+            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N))
+        )
 
     def predict(self, input_date):
         self.x = (1 - self.alpha) * self.x + \
