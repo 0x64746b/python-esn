@@ -49,7 +49,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
+    predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
     # debug
     for i, input_date in enumerate(inputs):
@@ -79,10 +79,10 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    predicted_outputs = [esn.predict(inputs[0])[0][0]]
+    predicted_outputs = [esn.predict(inputs[0])[0]]
     for i in range(1, len(inputs)):
-        next_input = np.array([[inputs[i][0][0]], [predicted_outputs[i-1]]])
-        predicted_outputs.append(esn.predict(next_input)[0][0])
+        next_input = np.array([inputs[i][0], predicted_outputs[i-1]])
+        predicted_outputs.append(esn.predict(next_input)[0])
 
     # debug
     for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
@@ -175,7 +175,7 @@ def generate_data():
     training_inputs = np.array(zip(
         frequencies[:NUM_TRAINING_SAMPLES],
         noisy_signal[:NUM_TRAINING_SAMPLES]
-    )).reshape(NUM_TRAINING_SAMPLES, 2, 1)
+    ))
 
     training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].reshape(
         1,  # out_size
@@ -189,7 +189,7 @@ def generate_data():
     inputs = np.array(zip(
         frequencies[:-1],
         signal[:-1]
-    )).reshape(len(frequencies[:-1]), 2, 1)
+    ))
 
     correct_outputs = signal[1:]
 

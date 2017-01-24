@@ -39,7 +39,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    predicted_outputs = [esn.predict(input_date)[0][0] for input_date in inputs]
+    predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
     # debug
     for i, input_date in enumerate(inputs):
@@ -68,9 +68,9 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
-    predicted_outputs = [esn.predict(inputs[0])[0][0]]
+    predicted_outputs = [esn.predict(inputs[0])[0]]
     for i in range(1, len(inputs)):
-        predicted_outputs.append(esn.predict(predicted_outputs[i-1])[0][0])
+        predicted_outputs.append(esn.predict(predicted_outputs[i-1])[0])
 
     # debug
     for i, predicted_date in enumerate([inputs[0]] + predicted_outputs[:-1]):
@@ -102,7 +102,10 @@ def plot_results(reference, predicted, mode):
 def load_data(file_name):
     data = np.loadtxt(file_name)
 
-    training_inputs = data[:NUM_TRAINING_SAMPLES]
+    training_inputs = data[:NUM_TRAINING_SAMPLES].reshape(
+        NUM_TRAINING_SAMPLES,
+        1  # in_size
+    )
     training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
         1,  # out_size
         NUM_TRAINING_SAMPLES
@@ -111,7 +114,7 @@ def load_data(file_name):
     # consume training data
     data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = data[:NUM_PREDICTION_SAMPLES]
+    inputs = data[:NUM_PREDICTION_SAMPLES].reshape(NUM_PREDICTION_SAMPLES, 1)
     correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
 
     return training_inputs, training_outputs, inputs, correct_outputs
