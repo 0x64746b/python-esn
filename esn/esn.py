@@ -47,21 +47,7 @@ class ESN(object):
         self.beta = smoothing_factor
 
     def fit(self, input_data, output_data):
-        # state collection matrix
-        S = np.zeros((self.N + self.K + 1, len(input_data)))
-
-        # harvest_reservoir_states
-        #  initial reservoir state
-        self.x = np.zeros((self.N, 1))
-        for i in range(len(input_data)):
-            u = input_data[i]
-            self.x = (1 - self.alpha) * self.x + \
-                self.alpha * np.tanh(
-                    np.dot(self.W_in, np.vstack((1, u))) +
-                    np.dot(self.W, self.x)
-                    # TODO Add `W_fb` here
-                )
-            S[:, i] = np.vstack((1, u, self.x))[:, 0]
+        S = self._harvest_reservoir_states(input_data)
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
@@ -76,6 +62,29 @@ class ESN(object):
             P,
             np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N))
         )
+
+    def _harvest_reservoir_states(self, u):
+        """
+        Drive the dynamical reservoir with the training data.
+
+        :param u: The `K` dimensional input signal of length `n_max`.
+        :return: The state collection matrix of size `(N + K + 1) x n_max`
+        """
+        # state collection matrix
+        S = np.zeros((self.N + self.K + 1, len(u)))
+
+        # initial reservoir state
+        self.x = np.zeros((self.N, 1))
+
+        for n in range(len(u)):
+            self.x = (1 - self.alpha) * self.x + self.alpha * np.tanh(
+                 np.dot(self.W_in, np.vstack((1, u[n]))) +
+                 np.dot(self.W, self.x)
+                 # TODO Add `W_fb` here
+            )
+            S[:, n] = np.vstack((1, u[n], self.x))[:, 0]
+
+        return S
 
     def predict(self, input_date):
         self.x = (1 - self.alpha) * self.x + \
