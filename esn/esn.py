@@ -69,14 +69,12 @@ class ESN(object):
         output_data = np.delete(output_data, np.s_[:self.washout], 1)
 
         # compute output weights
-        S_prime = S.T
+        R = np.dot(S, S.T)
+        P = np.dot(output_data, S.T)
 
         self.W_out = np.dot(
-            np.dot(output_data, S_prime),
-            np.linalg.inv(
-                np.dot(S, S_prime) +
-                self.beta**2 * np.eye(1 + self.K + self.N)
-            )
+            P,
+            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N))
         )
 
     def predict(self, input_date):
