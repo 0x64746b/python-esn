@@ -110,10 +110,10 @@ class ESN(object):
         )
 
     def predict(self, input_date):
-        self.x = (1 - self.alpha) * self.x + \
-            self.alpha * self.f(
-                np.dot(self.W_in, np.hstack((1, input_date))) +
-                np.dot(self.W, self.x)
-                # TODO Add `W_fb` here
-            )
+        self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
+            np.dot(self.W_in, np.hstack((1, input_date))) +
+            np.dot(self.W, self.x)
+            # TODO Add `W_fb` here
+        )
+
         return np.dot(self.W_out, np.hstack((1, input_date, self.x)))
