@@ -84,14 +84,24 @@ class ESN(object):
         self.x = np.zeros(self.N)
 
         for n in range(n_max):
-            self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
-                 np.dot(self.W_in, np.hstack((1, u[n]))) +
-                 np.dot(self.W, self.x)
-                 # TODO Add `W_fb` here
-            )
+            self.x = self._update_state(self.x, u[n])
             S[n] = np.hstack((1, u[n], self.x))
 
         return S
+
+    def _update_state(self, x, u):
+        """
+        Step the reservoir once.
+
+        :param x: The current reservoir state
+        :param u: The current input
+        :return: The next reservoir state
+        """
+        return (1 - self.alpha) * x + self.alpha * self.f(
+            np.dot(self.W_in, np.hstack((1, u))) +
+            np.dot(self.W, x)
+            # TODO Add `W_fb` here
+        )
 
     def _compute_output_weights(self, S, D):
         """
@@ -114,10 +124,6 @@ class ESN(object):
         ).T
 
     def predict(self, input_date):
-        self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
-            np.dot(self.W_in, np.hstack((1, input_date))) +
-            np.dot(self.W, self.x)
-            # TODO Add `W_fb` here
-        )
+        self.x = self._update_state(self.x, input_date)
 
         return np.dot(self.W_out, np.hstack((1, input_date, self.x)))
