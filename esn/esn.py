@@ -74,13 +74,15 @@ class ESN(object):
         :param u: The `K` dimensional input signal of length `n_max`.
         :return: The state collection matrix of size `(N + K + 1) x n_max`
         """
+        n_max = len(u)
+
         # state collection matrix
-        S = np.zeros((self.N + self.K + 1, len(u)))
+        S = np.zeros((self.N + self.K + 1, n_max))
 
         # initial reservoir state
         self.x = np.zeros(self.N)
 
-        for n in range(len(u)):
+        for n in range(n_max):
             self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
                  np.dot(self.W_in, np.hstack((1, u[n]))) +
                  np.dot(self.W, self.x)
