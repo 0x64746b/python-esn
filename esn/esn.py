@@ -43,6 +43,9 @@ class ESN(object):
         # leaking rate
         self.alpha = leaking_rate
 
+        # activation function
+        self.f = np.tanh
+
         # number of initial states to discard due to initial transients
         self.washout = washout
 
@@ -73,7 +76,7 @@ class ESN(object):
         self.x = np.zeros(self.N)
 
         for n in range(len(u)):
-            self.x = (1 - self.alpha) * self.x + self.alpha * np.tanh(
+            self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
                  np.dot(self.W_in, np.hstack((1, u[n]))) +
                  np.dot(self.W, self.x)
                  # TODO Add `W_fb` here
@@ -103,7 +106,7 @@ class ESN(object):
 
     def predict(self, input_date):
         self.x = (1 - self.alpha) * self.x + \
-            self.alpha * np.tanh(
+            self.alpha * self.f(
                 np.dot(self.W_in, np.hstack((1, input_date))) +
                 np.dot(self.W, self.x)
                 # TODO Add `W_fb` here
