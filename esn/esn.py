@@ -62,8 +62,8 @@ class ESN(object):
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
-        S = np.delete(S, np.s_[:self.washout], 1)
-        output_data = np.delete(output_data, np.s_[:self.washout], 1)
+        S = np.delete(S, np.s_[:self.washout], 0)
+        output_data = np.delete(output_data, np.s_[:self.washout], 0)
 
         self.W_out = self._compute_output_weights(S, output_data)
 
@@ -72,12 +72,12 @@ class ESN(object):
         Drive the dynamical reservoir with the training data.
 
         :param u: The `K` dimensional input signal of length `n_max`.
-        :return: The state collection matrix of size `(N + K + 1) x n_max`
+        :return: The state collection matrix of size `n_max x (N + K + 1)`
         """
         n_max = len(u)
 
         # state collection matrix
-        S = np.zeros((self.N + self.K + 1, n_max))
+        S = np.zeros((n_max, self.N + self.K + 1))
 
         # initial reservoir state
         self.x = np.zeros(self.N)
@@ -88,7 +88,7 @@ class ESN(object):
                  np.dot(self.W, self.x)
                  # TODO Add `W_fb` here
             )
-            S[:, n] = np.hstack((1, u[n], self.x))
+            S[n] = np.hstack((1, u[n], self.x))
 
         return S
 
@@ -99,17 +99,18 @@ class ESN(object):
         They are the linear regression weights of the teacher outputs on the
         reservoir states.
 
-        :param S: The state collection matrix of size `(N + K + 1) x n_max`
-        :param D: The teacher output collection matrix of size `L x n_max`
+        :param S: The state collection matrix of size `n_max x (N + K + 1)`
+        :param D: The teacher output collection matrix of size `n_max x L`
         :return: The output weights of size `L x (N + K + 1)`
         """
-        R = np.dot(S, S.T)
-        P = np.dot(D, S.T)
+        R = np.dot(S.T, S)
+        P = np.dot(S.T, D)
 
+        # Ridge regression
         return np.dot(
-            P,
-            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N))
-        )
+            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N)),
+            P
+        ).T
 
     def predict(self, input_date):
         self.x = (1 - self.alpha) * self.x + self.alpha * self.f(
