@@ -1,6 +1,11 @@
 # coding: utf-8
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 
 import numpy as np
@@ -44,7 +49,7 @@ class ESN(object):
         self.alpha = leaking_rate
 
         # activation function
-        self.f = np.tanh
+        self.f = lambda x: 1.7159 * np.tanh(2/3 * x)
 
         # number of initial states to discard due to initial transients
         self.washout = washout
