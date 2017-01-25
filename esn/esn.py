@@ -21,7 +21,8 @@ class ESN(object):
             spectral_radius,
             leaking_rate,
             washout,
-            smoothing_factor
+            smoothing_factor,
+            transfer_function=np.tanh,
     ):
         np.random.seed()
 
@@ -49,7 +50,7 @@ class ESN(object):
         self.alpha = leaking_rate
 
         # activation function
-        self.f = lambda x: 1.7159 * np.tanh(2/3 * x)
+        self.f = transfer_function
 
         # number of initial states to discard due to initial transients
         self.washout = washout
