@@ -20,6 +20,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 
 from esn import ESN
+from esn.transfer_functions import lecun
 
 
 SIGNAL_LENGTH = 15000
@@ -44,7 +45,8 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=0.25,
         leaking_rate=0.3,
         washout=100,
-        smoothing_factor=0.0001
+        smoothing_factor=0.0001,
+        transfer_function=lecun,
     )
 
     esn.fit(training_inputs, training_outputs)
@@ -74,7 +76,8 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=0.25,
         leaking_rate=0.1,
         washout=1000,
-        smoothing_factor=0.0001
+        smoothing_factor=0.0001,
+        transfer_function=lecun,
     )
 
     esn.fit(training_inputs, training_outputs)
