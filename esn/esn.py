@@ -35,6 +35,7 @@ class ESN(object):
                 activation_functions.identity
             ),
             ridge_regression=0,
+            state_noise=0,
     ):
         # dimension of input signal
         self.K = in_size
@@ -88,6 +89,9 @@ class ESN(object):
         # smoothing factor for ridge regression
         self.beta = ridge_regression
 
+        # state noise factor
+        self.nu = state_noise
+
         # initial reservoir state
         self.x = np.zeros(self.N)
 
@@ -120,25 +124,29 @@ class ESN(object):
         S = np.zeros((n_max, self.N + self.K + 1))
 
         for n in range(n_max):
-            self.x = self._update_state(u[n], self.x, self.y)
+            self.x = self._update_state(u[n], self.x, self.y, self.nu)
             self.y = y[n]
             S[n] = np.hstack((1, u[n], self.x))
 
         return S
 
-    def _update_state(self, u, x, y):
+    def _update_state(self, u, x, y, nu=0):
         """
         Step the reservoir once.
 
         :param u: The current input
         :param x: The current reservoir state
         :param y: The previous output
+        :param nu: The amount of state noise
         :return: The next reservoir state
         """
-        return (1 - self.alpha) * x + self.alpha * self.f(
-            np.dot(self.W_in, np.hstack((1, u))) +
-            self.W.dot(x) +
-            np.dot(self.W_fb, y)
+        return (1 - self.alpha) * x + self.alpha * (
+            self.f(
+                np.dot(self.W_in, np.hstack((1, u)))
+                + self.W.dot(x)
+                + np.dot(self.W_fb, y)
+            )
+            + nu * (np.random.rand(self.N) - 0.5)
         )
 
     def _compute_output_weights(self, S, D):
