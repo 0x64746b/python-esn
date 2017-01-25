@@ -178,8 +178,8 @@ def generate_data():
     ))
 
     training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].reshape(
-        1,  # out_size
-        NUM_TRAINING_SAMPLES
+        NUM_TRAINING_SAMPLES,
+        1  # out_size
     )
 
     # consume training data

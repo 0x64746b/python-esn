@@ -107,8 +107,8 @@ def load_data(file_name):
         1  # in_size
     )
     training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
-        1,  # out_size
-        NUM_TRAINING_SAMPLES
+        NUM_TRAINING_SAMPLES,
+        1  # out_size
     )
 
     # consume training data
