@@ -30,7 +30,10 @@ class ESN(object):
         self.L = out_size
 
         # input weight matrix
-        self.W_in = (np.random.rand(self.N, self.K + 1) - 0.5) * 1
+        # - centered around zero
+        # - of intermediate size in order to avoid the flat error surfaces
+        #   near the origin and far from the origin
+        self.W_in = np.random.rand(self.N, self.K + 1) - 0.5
 
         # reservoir weight matrix
         self.W = np.random.rand(self.N, self.N) - 0.5
