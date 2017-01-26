@@ -13,6 +13,8 @@ from scipy import sparse
 
 from esn.preprocessing import add_noise
 
+from . import transfer_functions
+
 
 class ESN(object):
 
@@ -28,6 +30,7 @@ class ESN(object):
             output_feedback=False,
             teacher_noise=0,
             activation_function=np.tanh,
+            output_activation_function=transfer_functions.identity,
             ridge_regression=0,
     ):
         # dimension of input signal
@@ -69,6 +72,9 @@ class ESN(object):
 
         # transfer function of the neurons in the reservoir
         self.f = activation_function
+
+        # output activation function
+        self.g = output_activation_function
 
         # number of initial states to discard due to initial transients
         self.washout = washout
@@ -151,6 +157,6 @@ class ESN(object):
 
     def predict(self, input_date):
         self.x = self._update_state(input_date, self.x, self.y)
-        self.y = np.dot(self.W_out, np.hstack((1, input_date, self.x)))
+        self.y = self.g(np.dot(self.W_out, np.hstack((1, input_date, self.x))))
 
         return self.y
