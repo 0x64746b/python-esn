@@ -58,6 +58,9 @@ class ESN(object):
         # smoothing factor for ridge regression
         self.beta = ridge_regression
 
+        # initial reservoir state
+        self.x = np.zeros(self.N)
+
     def fit(self, input_data, output_data):
         S = self._harvest_reservoir_states(input_data)
 
@@ -79,9 +82,6 @@ class ESN(object):
 
         # state collection matrix
         S = np.zeros((n_max, self.N + self.K + 1))
-
-        # initial reservoir state
-        self.x = np.zeros(self.N)
 
         for n in range(n_max):
             self.x = self._update_state(self.x, u[n])
