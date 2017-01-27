@@ -103,8 +103,7 @@ def _generate_with_structural_feedback(
         washout=1000,
         sparsity=0.95,
         output_feedback=True,
-        teacher_noise=0.03,
-        ridge_regression=0.001,
+        state_noise=0.007,
         activation_function=lecun,
         output_activation_function=(lecun, lecun_inv),
     )
