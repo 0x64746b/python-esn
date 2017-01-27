@@ -84,17 +84,17 @@ class ESN(object):
         S = np.zeros((n_max, self.N + self.K + 1))
 
         for n in range(n_max):
-            self.x = self._update_state(self.x, u[n])
+            self.x = self._update_state(u[n], self.x)
             S[n] = np.hstack((1, u[n], self.x))
 
         return S
 
-    def _update_state(self, x, u):
+    def _update_state(self, u, x):
         """
         Step the reservoir once.
 
-        :param x: The current reservoir state
         :param u: The current input
+        :param x: The current reservoir state
         :return: The next reservoir state
         """
         return (1 - self.alpha) * x + self.alpha * self.f(
@@ -124,6 +124,6 @@ class ESN(object):
         ).T
 
     def predict(self, input_date):
-        self.x = self._update_state(self.x, input_date)
+        self.x = self._update_state(input_date, self.x)
 
         return np.dot(self.W_out, np.hstack((1, input_date, self.x)))
