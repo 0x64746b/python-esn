@@ -106,6 +106,7 @@ def _generate_with_structural_feedback(
         teacher_noise=0.03,
         ridge_regression=0.001,
         activation_function=lecun,
+        output_activation_function=(np.tanh, np.arctanh),
     )
 
     # format data
@@ -164,6 +165,7 @@ def _generate_with_manual_feedback(
         sparsity=0.95,
         ridge_regression=0.001,
         activation_function=lecun,
+        output_activation_function=(np.tanh, np.arctanh),
     )
 
     # format data
@@ -268,6 +270,9 @@ def load_data():
 
     # scale frequencies to [-1, 1]
     frequencies = scale(frequencies)
+
+    # scale signal to ]-1, 1[
+    signal = scale(signal, 0.9999999999)
 
     training_inputs = (
         frequencies[:NUM_TRAINING_SAMPLES],
