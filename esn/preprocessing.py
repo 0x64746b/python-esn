@@ -22,8 +22,8 @@ def scale(samples, bound=1):
     normalized = (samples - min(samples)) / (max(samples) - min(samples))
 
     # center around 0 by shifting to [-0.5, 0.5]
-    shift = (max(normalized) - min(normalized)) / 2
-    centered = normalized - shift
+    centered = normalized - 0.5
 
-    scale = bound / shift
-    return scale * centered
+    # scale to requested interval
+    factor = bound / max(centered)
+    return factor * centered
