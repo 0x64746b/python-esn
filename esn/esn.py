@@ -21,7 +21,7 @@ class ESN(object):
             spectral_radius,
             leaking_rate,
             washout,
-            transfer_function=np.tanh,
+            activation_function=np.tanh,
             ridge_regression=0,
     ):
         np.random.seed()
@@ -49,8 +49,8 @@ class ESN(object):
         # leaking rate
         self.alpha = leaking_rate
 
-        # activation function
-        self.f = transfer_function
+        # transfer function of the neurons in the reservoir
+        self.f = activation_function
 
         # number of initial states to discard due to initial transients
         self.washout = washout
