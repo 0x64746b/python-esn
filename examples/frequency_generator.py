@@ -45,7 +45,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=0.25,
         leaking_rate=0.3,
         washout=100,
-        smoothing_factor=0.0001,
+        ridge_regression=0.001,
         transfer_function=lecun,
     )
 
@@ -76,7 +76,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=0.25,
         leaking_rate=0.1,
         washout=1000,
-        smoothing_factor=0.0001,
+        ridge_regression=0.001,
         transfer_function=lecun,
     )
 

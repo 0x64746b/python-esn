@@ -21,8 +21,8 @@ class ESN(object):
             spectral_radius,
             leaking_rate,
             washout,
-            smoothing_factor,
             transfer_function=np.tanh,
+            ridge_regression=0,
     ):
         np.random.seed()
 
@@ -56,7 +56,7 @@ class ESN(object):
         self.washout = washout
 
         # smoothing factor for ridge regression
-        self.beta = smoothing_factor
+        self.beta = ridge_regression
 
     def fit(self, input_data, output_data):
         S = self._harvest_reservoir_states(input_data)
