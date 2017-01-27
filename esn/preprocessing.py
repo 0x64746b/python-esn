@@ -8,6 +8,9 @@ from __future__ import (
 )
 
 
+import numpy as np
+
+
 def scale(samples, bound=1):
     """
     Scale the given samples to [-bound, bound].
@@ -27,3 +30,32 @@ def scale(samples, bound=1):
     # scale to requested interval
     factor = bound / max(centered)
     return factor * centered
+
+
+def add_noise(samples, size, mu=0, sigma=1):
+    """
+    Add noise of the given size to the given samples.
+
+    The random noise is drawn from a normal distribution with the given center
+    and standard deviation and then scaled by the given size.
+
+    :param samples: The samples to add noise to
+    :param size: The amount of noise to add
+    :param mu: The mean of the noise
+    :param sigma: The standard deviation of the noise
+    :return: The noisy samples
+    """
+    return samples + np.random.normal(mu, sigma, samples.shape) * size
+
+
+def generate_teacher_outputs(target_outputs, initial_output=0, teacher_noise=0):
+    """
+    Generate teacher outputs from the given plain targets.
+
+    :param target_outputs: The expected outputs
+    :param initial_output: The value to initialize the output layer with
+    :param teacher_noise: The amount of noise to add
+    :return: The generated teacher outputs
+    """
+    teacher_outputs = np.vstack((initial_output, target_outputs[:-1]))
+    return add_noise(teacher_outputs, teacher_noise)
