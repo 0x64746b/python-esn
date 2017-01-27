@@ -21,6 +21,7 @@ from sklearn.metrics import mean_squared_error
 
 from esn import ESN
 from esn.activation_functions import lecun
+from esn.preprocessing import scale
 
 
 SIGNAL_LENGTH = 15000
@@ -154,8 +155,6 @@ def generate_signal(
 
 
 def generate_data():
-    min_frequency = 1
-
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
@@ -164,7 +163,7 @@ def generate_data():
     )
 
     # scale frequencies to [-1, 1]
-    frequencies = 2 * (((frequencies - min_frequency) / (MAX_FREQUENCY - min_frequency)) - 0.5)
+    frequencies = scale(frequencies)
 
     # add noise to the signal to help stabilize the amplitude
     noisy_signal = signal + np.random.normal(0, 1, SIGNAL_LENGTH) * NOISE_FACTOR
