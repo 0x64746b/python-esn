@@ -46,16 +46,3 @@ def add_noise(samples, size, mu=0, sigma=1):
     :return: The noisy samples
     """
     return samples + np.random.normal(mu, sigma, samples.shape) * size
-
-
-def generate_teacher_outputs(target_outputs, initial_output=0, teacher_noise=0):
-    """
-    Generate teacher outputs from the given plain targets.
-
-    :param target_outputs: The expected outputs
-    :param initial_output: The value to initialize the output layer with
-    :param teacher_noise: The amount of noise to add
-    :return: The generated teacher outputs
-    """
-    teacher_outputs = np.vstack((initial_output, target_outputs[:-1]))
-    return add_noise(teacher_outputs, teacher_noise)

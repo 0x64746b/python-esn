@@ -10,7 +10,7 @@ from __future__ import (
 
 import numpy as np
 
-from esn.preprocessing import generate_teacher_outputs
+from esn.preprocessing import add_noise
 
 
 class ESN(object):
@@ -78,10 +78,9 @@ class ESN(object):
         self.y = np.zeros(self.L)
 
     def fit(self, input_data, output_data):
-        teacher_outputs = generate_teacher_outputs(
-            output_data,
-            initial_output=self.y,
-            teacher_noise=self.mu
+        teacher_outputs = add_noise(
+            np.vstack((self.y, output_data[:-1])),
+            self.mu
         )
 
         S = self._harvest_reservoir_states(input_data, teacher_outputs)
