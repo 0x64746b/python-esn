@@ -29,7 +29,6 @@ SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
 
-NOISE_FACTOR = 0.03
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 
 
@@ -81,28 +80,29 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
     """Generate values from a starting point."""
 
     esn = ESN(
-        in_size=2,
+        in_size=1,
         reservoir_size=200,
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.1,
         washout=1000,
+        output_feedback=True,
+        teacher_noise=0.03,
         ridge_regression=0.001,
         activation_function=lecun,
     )
 
     # format data
-    #  add noise to the signal to help stabilize the amplitude
-    training_inputs = np.array(zip(
-        training_inputs[0],
-        training_inputs[1]
-        + np.random.normal(0, 1, len(training_inputs[1])) * NOISE_FACTOR
-    ))
+    #  use only the frequency as input, the signal is fed back from the output
+    training_inputs = np.array(training_inputs[0]).reshape(
+        len(training_inputs[0]),
+        esn.K
+    )
     training_outputs = np.array(training_outputs).reshape(
         len(training_outputs),
         esn.L
     )
-    inputs = np.array(zip(*inputs))
+    inputs = np.array(inputs[0]).reshape(len(inputs[0]), esn.K)
 
     # train
     esn.fit(training_inputs, training_outputs)
@@ -110,20 +110,19 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
     # test
     predicted_outputs = [esn.predict(inputs[0])[0]]
     for i in range(1, len(inputs)):
-        next_input = np.array([inputs[i][0], predicted_outputs[i-1]])
-        predicted_outputs.append(esn.predict(next_input)[0])
+        predicted_outputs.append(esn.predict(inputs[i])[0])
 
     #  debug
-    for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
+    for i, predicted_date in enumerate([0] + predicted_outputs[:-1]):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
-            inputs[i][0],
+            inputs[i],
             predicted_date,
             predicted_outputs[i],
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='generate')
+    plot_results(inputs, correct_outputs, predicted_outputs, mode='generate')
 
 
 def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
