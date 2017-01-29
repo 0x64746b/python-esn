@@ -74,7 +74,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
+    plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='predict')
 
 
 def generate(training_inputs, training_outputs, inputs, correct_outputs):
@@ -123,16 +123,16 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='generate')
+    plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='generate')
 
 
-def plot_results(inputs, correct_outputs, predicted_outputs, mode):
+def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
     try:
         mse = mean_squared_error(correct_outputs, predicted_outputs)
     except ValueError as error:
         mse = error.message
     plt.plot(
-        [input_date[0] for input_date in inputs],
+        frequencies,
         color='r',
         label='Input frequency'
     )
