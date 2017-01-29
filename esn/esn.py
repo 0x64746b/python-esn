@@ -9,6 +9,7 @@ from __future__ import (
 
 
 import numpy as np
+from scipy import sparse
 
 from esn.preprocessing import add_noise
 
@@ -46,8 +47,13 @@ class ESN(object):
         self.W_in = np.random.rand(self.N, self.K + 1) - 0.5
 
         # reservoir weight matrix
-        self.W = np.random.rand(self.N, self.N) - 0.5
-        rho_W = np.max(np.abs(np.linalg.eig(self.W)[0]))
+        self.W = sparse.rand(self.N, self.N, density=0.05, format='csc')
+        self.W[self.W != 0] -= 0.5
+        rho_W = np.abs(sparse.linalg.eigs(
+            self.W,
+            k=1,
+            return_eigenvectors=False
+        )[0])
         self.W *= spectral_radius / rho_W
 
         # output feedback matrix
@@ -120,7 +126,7 @@ class ESN(object):
         """
         return (1 - self.alpha) * x + self.alpha * self.f(
             np.dot(self.W_in, np.hstack((1, u))) +
-            np.dot(self.W, x) +
+            self.W.dot(x) +
             np.dot(self.W_fb, y)
         )
 
