@@ -50,11 +50,21 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         activation_function=lecun,
     )
 
+    # format data
+    training_inputs = np.array(zip(*training_inputs))
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L,
+    )
+    inputs = np.array(zip(*inputs))
+
+    # train
     esn.fit(training_inputs, training_outputs)
 
+    # test
     predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
-    # debug
+    #  debug
     for i, input_date in enumerate(inputs):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
@@ -81,14 +91,29 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         activation_function=lecun,
     )
 
+    # format data
+    #  add noise to the signal to help stabilize the amplitude
+    training_inputs = np.array(zip(
+        training_inputs[0],
+        training_inputs[1]
+        + np.random.normal(0, 1, len(training_inputs[1])) * NOISE_FACTOR
+    ))
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L
+    )
+    inputs = np.array(zip(*inputs))
+
+    # train
     esn.fit(training_inputs, training_outputs)
 
+    # test
     predicted_outputs = [esn.predict(inputs[0])[0]]
     for i in range(1, len(inputs)):
         next_input = np.array([inputs[i][0], predicted_outputs[i-1]])
         predicted_outputs.append(esn.predict(next_input)[0])
 
-    # debug
+    #  debug
     for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
@@ -154,7 +179,7 @@ def generate_signal(
     return frequencies, signal
 
 
-def generate_data():
+def load_data():
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
@@ -165,34 +190,17 @@ def generate_data():
     # scale frequencies to [-1, 1]
     frequencies = scale(frequencies)
 
-    # add noise to the signal to help stabilize the amplitude
-    noisy_signal = signal + np.random.normal(0, 1, SIGNAL_LENGTH) * NOISE_FACTOR
-
-    plt.plot(
-        noisy_signal[NUM_TRAINING_SAMPLES+1:],
-        color='0.70',
-        label='Noisy signal'
-    )
-
-    training_inputs = np.array(zip(
+    training_inputs = (
         frequencies[:NUM_TRAINING_SAMPLES],
-        noisy_signal[:NUM_TRAINING_SAMPLES]
-    ))
-
-    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].reshape(
-        NUM_TRAINING_SAMPLES,
-        1  # out_size
+        signal[:NUM_TRAINING_SAMPLES]
     )
+    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1]
 
     # consume training data
     frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
     signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = np.array(zip(
-        frequencies[:-1],
-        signal[:-1]
-    ))
-
+    inputs = (frequencies[:-1], signal[:-1])
     correct_outputs = signal[1:]
 
     return training_inputs, training_outputs, inputs, correct_outputs
@@ -244,5 +252,5 @@ if __name__ == '__main__':
 
     setup_logging(args.verbosity)
 
-    data = generate_data()
+    data = load_data()
     COMMANDS[args.sub_command](*data)
