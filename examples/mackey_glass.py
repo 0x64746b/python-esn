@@ -34,6 +34,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=1.25,
         leaking_rate=0.3,
         washout=100,
+        sparsity=0.95,
         ridge_regression=0.0001
     )
 
@@ -63,6 +64,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         spectral_radius=1.25,
         leaking_rate=0.3,
         washout=100,
+        sparsity=0.95,
         output_feedback=True,
         ridge_regression=0.0001
     )
