@@ -57,23 +57,26 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
     """Generate values from a starting point."""
 
     esn = ESN(
-        in_size=1,
+        in_size=0,
         reservoir_size=1000,
         out_size=1,
         spectral_radius=1.25,
         leaking_rate=0.3,
         washout=100,
+        output_feedback=True,
         ridge_regression=0.0001
     )
 
+    # create "no" inputs
+    training_inputs = np.array([[]] * len(training_inputs))
+    inputs = np.array([[]] * len(inputs))
+
     esn.fit(training_inputs, training_outputs)
 
-    predicted_outputs = [esn.predict(inputs[0])[0]]
-    for i in range(1, len(inputs)):
-        predicted_outputs.append(esn.predict(predicted_outputs[i-1])[0])
+    predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
     # debug
-    for i, predicted_date in enumerate([inputs[0]] + predicted_outputs[:-1]):
+    for i, predicted_date in enumerate([training_outputs[-1]] + predicted_outputs[:-1]):
         logger.debug(
             '% f -> % f (Δ % f)',
             predicted_date,

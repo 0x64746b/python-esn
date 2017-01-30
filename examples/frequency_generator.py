@@ -21,7 +21,7 @@ from sklearn.metrics import mean_squared_error
 
 from esn import ESN
 from esn.activation_functions import lecun
-from esn.preprocessing import scale
+from esn.preprocessing import add_noise, scale
 
 
 SIGNAL_LENGTH = 15000
@@ -29,7 +29,7 @@ SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
 
-NOISE_FACTOR = 0.03
+INPUT_NOISE_FACTOR = 0.03
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 
 
@@ -50,11 +50,21 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         activation_function=lecun,
     )
 
+    # format data
+    training_inputs = np.array(zip(*training_inputs))
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L,
+    )
+    inputs = np.array(zip(*inputs))
+
+    # train
     esn.fit(training_inputs, training_outputs)
 
+    # test
     predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
-    # debug
+    #  debug
     for i, input_date in enumerate(inputs):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
@@ -64,11 +74,83 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='predict')
+    plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='predict')
 
 
-def generate(training_inputs, training_outputs, inputs, correct_outputs):
+def generate(*data):
     """Generate values from a starting point."""
+    if args.structural_feedback:
+        _generate_with_structural_feedback(*data)
+    else:
+        _generate_with_manual_feedback(*data)
+
+
+def _generate_with_structural_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Use an ESN with output feedback."""
+
+    esn = ESN(
+        in_size=1,
+        reservoir_size=200,
+        out_size=1,
+        spectral_radius=0.25,
+        leaking_rate=0.1,
+        washout=1000,
+        output_feedback=True,
+        teacher_noise=0.03,
+        ridge_regression=0.001,
+        activation_function=lecun,
+    )
+
+    # format data
+    #  use only the frequency as input, the signal is fed back from the output
+    training_inputs = np.array(training_inputs[0]).reshape(
+        len(training_inputs[0]),
+        esn.K
+    )
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L
+    )
+    inputs = np.array(inputs[0]).reshape(len(inputs[0]), esn.K)
+
+    # train
+    esn.fit(training_inputs, training_outputs)
+
+    # test
+    predicted_outputs = [esn.predict(inputs[0])[0]]
+    for i in range(1, len(inputs)):
+        predicted_outputs.append(esn.predict(inputs[i])[0])
+
+    #  debug
+    for i, predicted_date in enumerate([0] + predicted_outputs[:-1]):
+        logger.debug(
+            '% f | % f -> % f (Δ % f)',
+            inputs[i],
+            predicted_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+    plot_results(
+        inputs,
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with structural feedback'
+    )
+
+
+def _generate_with_manual_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Manually feedback predicted values into the inputs."""
 
     esn = ESN(
         in_size=2,
@@ -81,14 +163,28 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         activation_function=lecun,
     )
 
+    # format data
+    #  add noise to the signal to help stabilize the amplitude
+    training_inputs = np.array(zip(
+        training_inputs[0],
+        add_noise(training_inputs[1], INPUT_NOISE_FACTOR)
+    ))
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L
+    )
+    inputs = np.array(zip(*inputs))
+
+    # train
     esn.fit(training_inputs, training_outputs)
 
+    # test
     predicted_outputs = [esn.predict(inputs[0])[0]]
     for i in range(1, len(inputs)):
         next_input = np.array([inputs[i][0], predicted_outputs[i-1]])
         predicted_outputs.append(esn.predict(next_input)[0])
 
-    # debug
+    #  debug
     for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
         logger.debug(
             '% f | % f -> % f (Δ % f)',
@@ -98,16 +194,21 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='generate')
+    plot_results(
+        inputs[:, 0],
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with manual feedback'
+    )
 
 
-def plot_results(inputs, correct_outputs, predicted_outputs, mode):
+def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
     try:
         mse = mean_squared_error(correct_outputs, predicted_outputs)
     except ValueError as error:
         mse = error.message
     plt.plot(
-        [input_date[0] for input_date in inputs],
+        frequencies,
         color='r',
         label='Input frequency'
     )
@@ -154,7 +255,7 @@ def generate_signal(
     return frequencies, signal
 
 
-def generate_data():
+def load_data():
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
@@ -165,34 +266,17 @@ def generate_data():
     # scale frequencies to [-1, 1]
     frequencies = scale(frequencies)
 
-    # add noise to the signal to help stabilize the amplitude
-    noisy_signal = signal + np.random.normal(0, 1, SIGNAL_LENGTH) * NOISE_FACTOR
-
-    plt.plot(
-        noisy_signal[NUM_TRAINING_SAMPLES+1:],
-        color='0.70',
-        label='Noisy signal'
-    )
-
-    training_inputs = np.array(zip(
+    training_inputs = (
         frequencies[:NUM_TRAINING_SAMPLES],
-        noisy_signal[:NUM_TRAINING_SAMPLES]
-    ))
-
-    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].reshape(
-        NUM_TRAINING_SAMPLES,
-        1  # out_size
+        signal[:NUM_TRAINING_SAMPLES]
     )
+    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1]
 
     # consume training data
     frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
     signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = np.array(zip(
-        frequencies[:-1],
-        signal[:-1]
-    ))
-
+    inputs = (frequencies[:-1], signal[:-1])
     correct_outputs = signal[1:]
 
     return training_inputs, training_outputs, inputs, correct_outputs
@@ -225,10 +309,29 @@ def parse_command_line_args():
         help=predict.__doc__
     )
 
-    sub_commands.add_parser(
+    generate_command = sub_commands.add_parser(
         'generate',
         help=generate.__doc__
     )
+
+    feedback_type = generate_command.add_mutually_exclusive_group(
+        required=False
+    )
+    feedback_type.add_argument(
+        '-s',
+        '--structural-feedback',
+        dest='structural_feedback',
+        action='store_true',
+        help=_generate_with_structural_feedback.__doc__
+    )
+    feedback_type.add_argument(
+        '-m',
+        '--manual-feedback',
+        dest='structural_feedback',
+        action='store_false',
+        help=_generate_with_manual_feedback.__doc__
+    )
+    feedback_type.set_defaults(structural_feedback=True)
 
     return main_command.parse_args()
 
@@ -244,5 +347,5 @@ if __name__ == '__main__':
 
     setup_logging(args.verbosity)
 
-    data = generate_data()
+    data = load_data()
     COMMANDS[args.sub_command](*data)

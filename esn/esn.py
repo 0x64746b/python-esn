@@ -10,6 +10,8 @@ from __future__ import (
 
 import numpy as np
 
+from esn.preprocessing import add_noise
+
 
 class ESN(object):
 
@@ -21,6 +23,8 @@ class ESN(object):
             spectral_radius,
             leaking_rate,
             washout,
+            output_feedback=False,
+            teacher_noise=0,
             activation_function=np.tanh,
             ridge_regression=0,
     ):
@@ -46,6 +50,15 @@ class ESN(object):
         rho_W = np.max(np.abs(np.linalg.eig(self.W)[0]))
         self.W *= spectral_radius / rho_W
 
+        # output feedback matrix
+        if output_feedback:
+            self.W_fb = np.random.rand(self.N, self.L) - 0.5
+        else:
+            self.W_fb = np.zeros((self.N, self.L))
+
+        # amount of noise added when forcing teacher outputs
+        self.mu = teacher_noise
+
         # leaking rate
         self.alpha = leaking_rate
 
@@ -61,8 +74,13 @@ class ESN(object):
         # initial reservoir state
         self.x = np.zeros(self.N)
 
+        # initial output
+        self.y = np.zeros(self.L)
+
     def fit(self, input_data, output_data):
-        S = self._harvest_reservoir_states(input_data)
+        teacher_outputs = add_noise(output_data, self.mu)
+
+        S = self._harvest_reservoir_states(input_data, teacher_outputs)
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
@@ -71,11 +89,12 @@ class ESN(object):
 
         self.W_out = self._compute_output_weights(S, output_data)
 
-    def _harvest_reservoir_states(self, u):
+    def _harvest_reservoir_states(self, u, y):
         """
         Drive the dynamical reservoir with the training data.
 
         :param u: The `K` dimensional input signal of length `n_max`.
+        :param y: The `L` dimensional output signal.
         :return: The state collection matrix of size `n_max x (N + K + 1)`
         """
         n_max = len(u)
@@ -84,23 +103,25 @@ class ESN(object):
         S = np.zeros((n_max, self.N + self.K + 1))
 
         for n in range(n_max):
-            self.x = self._update_state(u[n], self.x)
+            self.x = self._update_state(u[n], self.x, self.y)
+            self.y = y[n]
             S[n] = np.hstack((1, u[n], self.x))
 
         return S
 
-    def _update_state(self, u, x):
+    def _update_state(self, u, x, y):
         """
         Step the reservoir once.
 
         :param u: The current input
         :param x: The current reservoir state
+        :param y: The previous output
         :return: The next reservoir state
         """
         return (1 - self.alpha) * x + self.alpha * self.f(
             np.dot(self.W_in, np.hstack((1, u))) +
-            np.dot(self.W, x)
-            # TODO Add `W_fb` here
+            np.dot(self.W, x) +
+            np.dot(self.W_fb, y)
         )
 
     def _compute_output_weights(self, S, D):
@@ -124,6 +145,7 @@ class ESN(object):
         ).T
 
     def predict(self, input_date):
-        self.x = self._update_state(input_date, self.x)
+        self.x = self._update_state(input_date, self.x, self.y)
+        self.y = np.dot(self.W_out, np.hstack((1, input_date, self.x)))
 
-        return np.dot(self.W_out, np.hstack((1, input_date, self.x)))
+        return self.y
