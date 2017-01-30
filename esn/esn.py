@@ -78,10 +78,7 @@ class ESN(object):
         self.y = np.zeros(self.L)
 
     def fit(self, input_data, output_data):
-        teacher_outputs = add_noise(
-            np.vstack((self.y, output_data[:-1])),
-            self.mu
-        )
+        teacher_outputs = add_noise(output_data, self.mu)
 
         S = self._harvest_reservoir_states(input_data, teacher_outputs)
 
@@ -106,7 +103,8 @@ class ESN(object):
         S = np.zeros((n_max, self.N + self.K + 1))
 
         for n in range(n_max):
-            self.x = self._update_state(u[n], self.x, y[n])
+            self.x = self._update_state(u[n], self.x, self.y)
+            self.y = y[n]
             S[n] = np.hstack((1, u[n], self.x))
 
         return S
