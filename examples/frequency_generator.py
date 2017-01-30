@@ -21,7 +21,7 @@ from sklearn.metrics import mean_squared_error
 
 from esn import ESN
 from esn.activation_functions import lecun
-from esn.preprocessing import scale
+from esn.preprocessing import add_noise, scale
 
 
 SIGNAL_LENGTH = 15000
@@ -29,6 +29,7 @@ SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
 
+INPUT_NOISE_FACTOR = 0.03
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 
 
@@ -76,8 +77,21 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
     plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='predict')
 
 
-def generate(training_inputs, training_outputs, inputs, correct_outputs):
+def generate(*data):
     """Generate values from a starting point."""
+    if args.structural_feedback:
+        _generate_with_structural_feedback(*data)
+    else:
+        _generate_with_manual_feedback(*data)
+
+
+def _generate_with_structural_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Use an ESN with output feedback."""
 
     esn = ESN(
         in_size=1,
@@ -122,7 +136,70 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(inputs, correct_outputs, predicted_outputs, mode='generate')
+    plot_results(
+        inputs,
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with structural feedback'
+    )
+
+
+def _generate_with_manual_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Manually feedback predicted values into the inputs."""
+
+    esn = ESN(
+        in_size=2,
+        reservoir_size=200,
+        out_size=1,
+        spectral_radius=0.25,
+        leaking_rate=0.1,
+        washout=1000,
+        ridge_regression=0.001,
+        activation_function=lecun,
+    )
+
+    # format data
+    #  add noise to the signal to help stabilize the amplitude
+    training_inputs = np.array(zip(
+        training_inputs[0],
+        add_noise(training_inputs[1], INPUT_NOISE_FACTOR)
+    ))
+    training_outputs = np.array(training_outputs).reshape(
+        len(training_outputs),
+        esn.L
+    )
+    inputs = np.array(zip(*inputs))
+
+    # train
+    esn.fit(training_inputs, training_outputs)
+
+    # test
+    predicted_outputs = [esn.predict(inputs[0])[0]]
+    for i in range(1, len(inputs)):
+        next_input = np.array([inputs[i][0], predicted_outputs[i-1]])
+        predicted_outputs.append(esn.predict(next_input)[0])
+
+    #  debug
+    for i, predicted_date in enumerate([inputs[0][1]] + predicted_outputs[:-1]):
+        logger.debug(
+            '% f | % f -> % f (Δ % f)',
+            inputs[i][0],
+            predicted_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+    plot_results(
+        inputs[:, 0],
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with manual feedback'
+    )
 
 
 def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
@@ -232,10 +309,29 @@ def parse_command_line_args():
         help=predict.__doc__
     )
 
-    sub_commands.add_parser(
+    generate_command = sub_commands.add_parser(
         'generate',
         help=generate.__doc__
     )
+
+    feedback_type = generate_command.add_mutually_exclusive_group(
+        required=False
+    )
+    feedback_type.add_argument(
+        '-s',
+        '--structural-feedback',
+        dest='structural_feedback',
+        action='store_true',
+        help=_generate_with_structural_feedback.__doc__
+    )
+    feedback_type.add_argument(
+        '-m',
+        '--manual-feedback',
+        dest='structural_feedback',
+        action='store_false',
+        help=_generate_with_manual_feedback.__doc__
+    )
+    feedback_type.set_defaults(structural_feedback=True)
 
     return main_command.parse_args()
 
