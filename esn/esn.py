@@ -24,6 +24,7 @@ class ESN(object):
             spectral_radius,
             leaking_rate,
             washout,
+            sparsity=0,
             output_feedback=False,
             teacher_noise=0,
             activation_function=np.tanh,
@@ -47,7 +48,7 @@ class ESN(object):
         self.W_in = np.random.rand(self.N, self.K + 1) - 0.5
 
         # reservoir weight matrix
-        self.W = sparse.rand(self.N, self.N, density=0.05, format='csc')
+        self.W = sparse.rand(self.N, self.N, density=1-sparsity, format='csc')
         self.W[self.W != 0] -= 0.5
         rho_W = np.abs(sparse.linalg.eigs(
             self.W,
