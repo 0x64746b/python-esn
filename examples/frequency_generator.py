@@ -350,5 +350,8 @@ if __name__ == '__main__':
 
     setup_logging(args.verbosity)
 
+    # explicitly seed PRNG for comparable runs
+    np.random.seed(48)
+
     data = load_data()
     COMMANDS[args.sub_command](*data)

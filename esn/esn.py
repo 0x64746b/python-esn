@@ -30,8 +30,6 @@ class ESN(object):
             activation_function=np.tanh,
             ridge_regression=0,
     ):
-        np.random.seed()
-
         # dimension of input signal
         self.K = in_size
 
