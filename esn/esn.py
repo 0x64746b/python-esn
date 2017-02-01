@@ -62,6 +62,9 @@ class ESN(object):
         )[0])
         self.W *= spectral_radius / rho_W
 
+        # the untrained output weights
+        self.W_out = None
+
         # output feedback matrix
         if output_feedback:
             self.W_fb = np.random.rand(self.N, self.L) - 0.5
