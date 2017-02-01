@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
 from esn import ESN
+from esn.preprocessing import scale
 
 
 NUM_TRAINING_SAMPLES = 2000
@@ -99,13 +100,15 @@ def plot_results(reference, predicted, mode):
     plt.plot(predicted, label='Predicted')
     plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
     plt.gca().set_title('Mode: {}'.format(mode))
-    plt.gca().set_ylim([-0.5, 0.5])
     plt.legend()
     plt.show()
 
 
 def load_data(file_name):
     data = np.loadtxt(file_name)
+
+    # scale data to stretch to [-1, 1]
+    data = scale(data)
 
     training_inputs = data[:NUM_TRAINING_SAMPLES].reshape(
         NUM_TRAINING_SAMPLES,
