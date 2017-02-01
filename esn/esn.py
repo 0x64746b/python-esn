@@ -18,6 +18,8 @@ from . import activation_functions
 
 class ESN(object):
 
+    BIAS = np.array([1])
+
     def __init__(
             self,
             in_size,
@@ -50,7 +52,7 @@ class ESN(object):
         # - centered around zero
         # - of intermediate size in order to avoid the flat error surfaces
         #   near the origin and far from the origin
-        self.W_in = np.random.rand(self.N, self.K + 1) - 0.5
+        self.W_in = np.random.rand(self.N, self.BIAS.size + self.K) - 0.5
 
         # reservoir weight matrix
         self.W = sparse.rand(self.N, self.N, density=1-sparsity, format='csc')
@@ -119,17 +121,17 @@ class ESN(object):
 
         :param u: The `K` dimensional input signal of length `n_max`.
         :param y: The `L` dimensional output signal.
-        :return: The state collection matrix of size `n_max x (N + K + 1)`
+        :return: The state collection matrix of size `n_max x (1 + K + N)`
         """
         n_max = len(u)
 
         # state collection matrix
-        S = np.zeros((n_max, self.N + self.K + 1))
+        S = np.zeros((n_max, self.BIAS.size + self.K + self.N))
 
         for n in range(n_max):
             self.x = self._update_state(u[n], self.x, self.y, self.nu)
             self.y = y[n]
-            S[n] = np.hstack((1, u[n], self.x))
+            S[n] = np.hstack((self.BIAS, u[n], self.x))
 
         return S
 
@@ -145,7 +147,7 @@ class ESN(object):
         """
         return (1 - self.alpha) * x + self.alpha * (
             self.f(
-                np.dot(self.W_in, np.hstack((1, u)))
+                np.dot(self.W_in, np.hstack((self.BIAS, u)))
                 + self.W.dot(x)
                 + np.dot(self.W_fb, y)
             )
@@ -159,21 +161,27 @@ class ESN(object):
         They are the linear regression weights of the teacher outputs on the
         reservoir states.
 
-        :param S: The state collection matrix of size `n_max x (N + K + 1)`
+        :param S: The state collection matrix of size `n_max x (1 + K + N)`
         :param D: The teacher output collection matrix of size `n_max x L`
-        :return: The output weights of size `L x (N + K + 1)`
+        :return: The output weights of size `L x (1 + K + N)`
         """
         R = np.dot(S.T, S)
         P = np.dot(S.T, self.g_inv(D))
 
         # Ridge regression
         return np.dot(
-            np.linalg.inv(R + self.beta**2 * np.identity(1 + self.K + self.N)),
+            np.linalg.inv(
+                R
+                + self.beta**2 * np.identity(self.BIAS.size + self.K + self.N)
+            ),
             P
         ).T
 
     def predict(self, input_date):
         self.x = self._update_state(input_date, self.x, self.y)
-        self.y = self.g(np.dot(self.W_out, np.hstack((1, input_date, self.x))))
+        self.y = self.g(np.dot(
+            self.W_out,
+            np.hstack((self.BIAS, input_date, self.x))
+        ))
 
         return self.y
