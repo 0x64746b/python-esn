@@ -145,9 +145,9 @@ class ESN(object):
         """
         return (1 - self.alpha) * x + self.alpha * (
             self.f(
-                np.dot(self.W_in, np.hstack((self.BIAS, u)))
+                self.W_in.dot(np.hstack((self.BIAS, u)))
                 + self.W.dot(x)
-                + np.dot(self.W_fb, y)
+                + self.W_fb.dot(y)
             )
             + nu * (np.random.rand(self.N) - 0.5)
         )
