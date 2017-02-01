@@ -20,7 +20,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 
 from esn import ESN
-from esn.activation_functions import lecun
+from esn.activation_functions import lecun, lecun_inv
 from esn.preprocessing import add_noise, scale
 
 
@@ -106,7 +106,7 @@ def _generate_with_structural_feedback(
         teacher_noise=0.03,
         ridge_regression=0.001,
         activation_function=lecun,
-        output_activation_function=(np.tanh, np.arctanh),
+        output_activation_function=(lecun, lecun_inv),
     )
 
     # format data
@@ -165,7 +165,6 @@ def _generate_with_manual_feedback(
         sparsity=0.95,
         ridge_regression=0.001,
         activation_function=lecun,
-        output_activation_function=(np.tanh, np.arctanh),
     )
 
     # format data
@@ -270,9 +269,6 @@ def load_data():
 
     # scale frequencies to [-1, 1]
     frequencies = scale(frequencies)
-
-    # scale signal to ]-1, 1[
-    signal = scale(signal, 0.9999999999)
 
     training_inputs = (
         frequencies[:NUM_TRAINING_SAMPLES],
