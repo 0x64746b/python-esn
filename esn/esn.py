@@ -27,7 +27,7 @@ class ESN(object):
             out_size,
             spectral_radius,
             leaking_rate,
-            washout,
+            initial_transients=0,
             sparsity=0,
             output_feedback=False,
             teacher_noise=0,
@@ -88,8 +88,8 @@ class ESN(object):
         self.g = output_activation_function[0]
         self.g_inv = output_activation_function[1]
 
-        # number of initial states to discard due to initial transients
-        self.washout = washout
+        # number of states to discard due to initial transients
+        self.washout = initial_transients
 
         # smoothing factor for ridge regression
         self.beta = ridge_regression
