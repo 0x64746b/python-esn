@@ -20,7 +20,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 
 from esn import ESN
-from esn.activation_functions import lecun
+from esn.activation_functions import lecun, lecun_inv
 from esn.preprocessing import add_noise, scale
 
 
@@ -106,6 +106,7 @@ def _generate_with_structural_feedback(
         teacher_noise=0.03,
         ridge_regression=0.001,
         activation_function=lecun,
+        output_activation_function=(lecun, lecun_inv),
     )
 
     # format data
