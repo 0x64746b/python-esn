@@ -7,13 +7,11 @@ from __future__ import (
     unicode_literals,
 )
 
-
 import numpy as np
 from scipy import sparse
 
-from esn.preprocessing import add_noise
-
 from . import activation_functions
+from .preprocessing import add_noise
 
 
 class ESN(object):
