@@ -33,8 +33,8 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         out_size=1,
         spectral_radius=1.25,
         leaking_rate=0.3,
-        initial_transients=100,
         sparsity=0.95,
+        initial_transients=100,
         ridge_regression=0.0001
     )
 
@@ -63,10 +63,10 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         out_size=1,
         spectral_radius=1.25,
         leaking_rate=0.3,
-        initial_transients=100,
         sparsity=0.95,
+        initial_transients=100,
+        ridge_regression=0.0001,
         output_feedback=True,
-        ridge_regression=0.0001
     )
 
     # create "no" inputs

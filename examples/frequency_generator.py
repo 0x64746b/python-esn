@@ -45,8 +45,8 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.3,
-        initial_transients=100,
         sparsity=0.95,
+        initial_transients=100,
         ridge_regression=0.001,
         activation_function=lecun,
     )
@@ -100,12 +100,12 @@ def _generate_with_structural_feedback(
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.1,
-        initial_transients=1000,
         sparsity=0.95,
-        output_feedback=True,
+        initial_transients=1000,
         state_noise=0.007,
         activation_function=lecun,
         output_activation_function=(lecun, lecun_inv),
+        output_feedback=True,
     )
 
     # format data
@@ -160,8 +160,8 @@ def _generate_with_manual_feedback(
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.1,
-        initial_transients=1000,
         sparsity=0.95,
+        initial_transients=1000,
         ridge_regression=0.001,
         activation_function=lecun,
     )

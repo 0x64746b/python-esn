@@ -27,17 +27,17 @@ class ESN(object):
             out_size,
             spectral_radius,
             leaking_rate=1,
-            initial_transients=0,
             sparsity=0,
-            output_feedback=False,
-            teacher_noise=0,
+            initial_transients=0,
+            ridge_regression=0,
+            state_noise=0,
             activation_function=np.tanh,
             output_activation_function=(
                 activation_functions.identity,
                 activation_functions.identity
             ),
-            ridge_regression=0,
-            state_noise=0,
+            output_feedback=False,
+            teacher_noise=0,
     ):
         # dimension of input signal
         self.K = in_size
@@ -79,15 +79,6 @@ class ESN(object):
         # leaking rate
         self.alpha = leaking_rate
 
-        # transfer function of the neurons in the reservoir
-        self.f = activation_function
-
-        # output activation function
-        #  make sure to scale the target outputs to within the domain of the
-        #  inverse output function
-        self.g = output_activation_function[0]
-        self.g_inv = output_activation_function[1]
-
         # number of states to discard due to initial transients
         self.washout = initial_transients
 
@@ -96,6 +87,15 @@ class ESN(object):
 
         # state noise factor
         self.nu = state_noise
+
+        # transfer function of the neurons in the reservoir
+        self.f = activation_function
+
+        # output activation function
+        #  make sure to scale the target outputs to within the domain of the
+        #  inverse output function
+        self.g = output_activation_function[0]
+        self.g_inv = output_activation_function[1]
 
         # initial reservoir state
         self.x = np.zeros(self.N)
