@@ -26,7 +26,7 @@ class ESN(object):
             reservoir_size,
             out_size,
             spectral_radius,
-            leaking_rate,
+            leaking_rate=1,
             initial_transients=0,
             sparsity=0,
             output_feedback=False,
