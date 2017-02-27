@@ -9,6 +9,7 @@ from __future__ import (
 
 import numpy as np
 from scipy import sparse
+from scipy.sparse import linalg
 
 from . import activation_functions
 from .preprocessing import add_noise
