@@ -22,13 +22,13 @@ def scale(samples, bound=1):
     :return: The scaled samples
     """
     # normalize to [0, 1]
-    normalized = (samples - min(samples)) / (max(samples) - min(samples))
+    normalized = (samples - np.min(samples)) / (np.max(samples) - np.min(samples))
 
     # center around 0 by shifting to [-0.5, 0.5]
     centered = normalized - 0.5
 
     # scale to requested interval
-    factor = bound / max(centered)
+    factor = bound / np.max(centered)
     return factor * centered
 
 
