@@ -183,16 +183,9 @@ class ESN(object):
         :param D: The teacher output collection matrix of size `n_max x L`
         :return: The output weights of size `L x (1 + K + N)`
         """
-        R = np.dot(S.T, S)
-        P = np.dot(S.T, self.g_inv(D))
-
-        # Ridge regression
         return np.dot(
-            np.linalg.inv(
-                R
-                + self.beta**2 * np.identity(self.BIAS.size + self.K + self.N)
-            ),
-            P
+            np.linalg.pinv(S),
+            D
         ).T
 
     def predict(self, input_date):
