@@ -78,9 +78,9 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
     plot_results(inputs[:, 0], correct_outputs, predicted_outputs, mode='predict')
 
 
-def generate(*data):
+def generate(*data, **args):
     """Generate values from a starting point."""
-    if args.structural_feedback:
+    if args['structural_feedback']:
         _generate_with_structural_feedback(*data)
     else:
         _generate_with_manual_feedback(*data)
@@ -336,7 +336,7 @@ def parse_command_line_args():
     )
     feedback_type.set_defaults(structural_feedback=True)
 
-    return main_command.parse_args()
+    return vars(main_command.parse_args())
 
 
 COMMANDS = {
@@ -349,13 +349,13 @@ def main():
     """The main entry point."""
     args = parse_command_line_args()
 
-    setup_logging(args.verbosity)
+    setup_logging(args.pop('verbosity'))
 
     # explicitly seed PRNG for comparable runs
     np.random.seed(48)
 
     data = load_data()
-    COMMANDS[args.sub_command](*data)
+    COMMANDS[args.pop('sub_command')](*data, **args)
 
 
 if __name__ == '__main__':
