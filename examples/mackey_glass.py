@@ -177,7 +177,8 @@ COMMANDS = {
 }
 
 
-if __name__ == '__main__':
+def main():
+    """The main entry point."""
     args = parse_command_line_args()
 
     setup_logging(args.verbosity)
@@ -187,3 +188,7 @@ if __name__ == '__main__':
 
     data = load_data(args.data_file)
     COMMANDS[args.sub_command](*data)
+
+
+if __name__ == '__main__':
+    main()
