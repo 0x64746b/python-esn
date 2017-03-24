@@ -92,13 +92,13 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
 def plot_results(reference, predicted, mode):
     try:
-        mse = mean_squared_error(reference, predicted)
+        rmse = np.sqrt(mean_squared_error(reference, predicted))
     except ValueError as error:
-        mse = error.message
+        rmse = error.message
 
     plt.plot(reference, label='Reference')
     plt.plot(predicted, label='Predicted')
-    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+    plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
     plt.gca().set_title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
