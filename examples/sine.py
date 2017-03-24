@@ -207,9 +207,9 @@ def _generate_with_manual_feedback(
 
 def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
     try:
-        mse = mean_squared_error(correct_outputs, predicted_outputs)
+        rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
     except ValueError as error:
-        mse = error.message
+        rmse = error.message
     plt.plot(
         frequencies,
         color='r',
@@ -220,7 +220,7 @@ def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
     plt.gca().xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
-    plt.gca().add_artist(AnchoredText('MSE: {}'.format(mse), loc=2))
+    plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
     plt.title('Mode: {}'.format(mode))
     plt.legend()
     plt.show()
