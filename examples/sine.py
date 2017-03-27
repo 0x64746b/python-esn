@@ -103,6 +103,7 @@ def _generate_with_structural_feedback(
         sparsity=0.95,
         initial_transients=1000,
         state_noise=0.007,
+        squared_network_state=True,
         activation_function=lecun,
         output_activation_function=(lecun, lecun_inv),
         output_feedback=True,
@@ -156,13 +157,14 @@ def _generate_with_manual_feedback(
 
     esn = ESN(
         in_size=2,
-        reservoir_size=200,
+        reservoir_size=90,
         out_size=1,
         spectral_radius=0.25,
         leaking_rate=0.1,
         sparsity=0.95,
         initial_transients=1000,
         ridge_regression=0.001,
+        squared_network_state=True,
         activation_function=lecun,
     )
 

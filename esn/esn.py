@@ -30,6 +30,7 @@ class ESN(object):
             initial_transients=0,
             ridge_regression=0,
             state_noise=0,
+            squared_network_state=False,
             activation_function=np.tanh,
             output_activation_function=(
                 activation_functions.identity,
@@ -87,6 +88,9 @@ class ESN(object):
         # state noise factor
         self.nu = state_noise
 
+        # use the squared network state as additional nonlinear transformations
+        self.nonlinear_augmentation = squared_network_state
+
         # transfer function of the neurons in the reservoir
         self.f = activation_function
 
@@ -140,6 +144,9 @@ class ESN(object):
             self.y = y[n]
             S[n] = np.hstack((u[n], self.x))
 
+        if self.nonlinear_augmentation:
+            S = np.hstack((S, S[:, 1:] ** 2))
+
         return S
 
     def _update_state(self, u, x, y, nu=0):
@@ -168,6 +175,9 @@ class ESN(object):
         They are the linear regression weights of the teacher outputs on the
         reservoir states.
 
+        Note that `S` (and therefore the returned weights) may have `K + N`
+        additional columns if the states have been squared to add nonlinearity.
+
         :param S: The state collection matrix of size `n_max x (1 + K + N)`
         :param D: The teacher output collection matrix of size `n_max x L`
         :return: The output weights of size `L x (1 + K + N)`
@@ -187,6 +197,11 @@ class ESN(object):
     def predict(self, input_date):
         u = np.hstack((self.BIAS, input_date))
         self.x = self._update_state(u, self.x, self.y)
-        self.y = self.g(np.dot(self.W_out, np.hstack((u, self.x))))
+        z = np.hstack((u, self.x))
+
+        if self.nonlinear_augmentation:
+            z = np.hstack((z, z[1:] ** 2))
+
+        self.y = self.g(np.dot(self.W_out, z))
 
         return self.y
