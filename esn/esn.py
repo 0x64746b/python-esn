@@ -102,10 +102,18 @@ class ESN(object):
         # initial output
         self.y = np.zeros(self.L)
 
+    @classmethod
+    def _add_bias(cls, input_data):
+        return np.hstack((
+            np.broadcast_to(cls.BIAS, (input_data.shape[0], cls.BIAS.shape[0])),
+            input_data
+        ))
+
     def fit(self, input_data, output_data):
+        expanded_inputs = self._add_bias(input_data)
         teacher_outputs = add_noise(output_data, self.mu)
 
-        S = self._harvest_reservoir_states(input_data, teacher_outputs)
+        S = self._harvest_reservoir_states(expanded_inputs, teacher_outputs)
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
@@ -118,7 +126,7 @@ class ESN(object):
         """
         Drive the dynamical reservoir with the training data.
 
-        :param u: The `K` dimensional input signal of length `n_max`.
+        :param u: The `1 + K` dimensional input signal of length `n_max`.
         :param y: The `L` dimensional output signal.
         :return: The state collection matrix of size `n_max x (1 + K + N)`
         """
@@ -130,7 +138,7 @@ class ESN(object):
         for n in range(n_max):
             self.x = self._update_state(u[n], self.x, self.y, self.nu)
             self.y = y[n]
-            S[n] = np.hstack((self.BIAS, u[n], self.x))
+            S[n] = np.hstack((u[n], self.x))
 
         return S
 
@@ -146,7 +154,7 @@ class ESN(object):
         """
         return (1 - self.alpha) * x + self.alpha * (
             self.f(
-                self.W_in.dot(np.hstack((self.BIAS, u)))
+                self.W_in.dot(u)
                 + self.W.dot(x)
                 + self.W_fb.dot(y)
                 + nu * (np.random.rand(self.N) - 0.5)
@@ -177,10 +185,8 @@ class ESN(object):
         ).T
 
     def predict(self, input_date):
-        self.x = self._update_state(input_date, self.x, self.y)
-        self.y = self.g(np.dot(
-            self.W_out,
-            np.hstack((self.BIAS, input_date, self.x))
-        ))
+        u = np.hstack((self.BIAS, input_date))
+        self.x = self._update_state(u, self.x, self.y)
+        self.y = self.g(np.dot(self.W_out, np.hstack((u, self.x))))
 
         return self.y
