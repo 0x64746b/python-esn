@@ -149,8 +149,8 @@ class ESN(object):
                 self.W_in.dot(np.hstack((self.BIAS, u)))
                 + self.W.dot(x)
                 + self.W_fb.dot(y)
+                + nu * (np.random.rand(self.N) - 0.5)
             )
-            + nu * (np.random.rand(self.N) - 0.5)
         )
 
     def _compute_output_weights(self, S, D):
