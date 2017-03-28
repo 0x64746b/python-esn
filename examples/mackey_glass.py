@@ -62,7 +62,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         in_size=0,
         reservoir_size=1000,
         out_size=1,
-        spectral_radius=1.25,
+        spectral_radius=0.75,
         leaking_rate=0.3,
         sparsity=0.95,
         initial_transients=100,
