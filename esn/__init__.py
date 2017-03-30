@@ -1,3 +1,3 @@
 # coding: utf-8
 
-from .esn import Esn
+from .esn import Esn, WienerHopfEsn

@@ -14,7 +14,7 @@ from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
-from esn import Esn
+from esn import Esn, WienerHopfEsn
 from esn.preprocessing import scale
 
 
@@ -28,7 +28,7 @@ logger = logging.getLogger('python-esn.examples')
 def predict(training_inputs, training_outputs, inputs, correct_outputs):
     """Predict the next value for each given input."""
 
-    esn = Esn(
+    esn = WienerHopfEsn(
         in_size=1,
         reservoir_size=1000,
         out_size=1,
@@ -66,7 +66,6 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         leaking_rate=0.3,
         sparsity=0.95,
         initial_transients=100,
-        ridge_regression=0.0001,
         output_feedback=True,
     )
 

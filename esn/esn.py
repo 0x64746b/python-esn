@@ -16,6 +16,12 @@ from .preprocessing import add_noise
 
 
 class Esn(object):
+    """
+    Model an Echo State Network
+
+    Use the pseudoinverse of the extended reservoir states to compute the output
+    weights.
+    """
 
     BIAS = np.array([1])
 
@@ -28,7 +34,6 @@ class Esn(object):
             leaking_rate=1,
             sparsity=0,
             initial_transients=0,
-            ridge_regression=0,
             state_noise=0,
             squared_network_state=False,
             activation_function=np.tanh,
@@ -81,9 +86,6 @@ class Esn(object):
 
         # number of states to discard due to initial transients
         self.washout = initial_transients
-
-        # smoothing factor for ridge regression
-        self.beta = ridge_regression
 
         # state noise factor
         self.nu = state_noise
@@ -200,3 +202,31 @@ class Esn(object):
         self.y = self.g(np.dot(self.W_out, z))
 
         return self.y
+
+
+class WienerHopfEsn(Esn):
+    """
+    Model an Echo State Network
+
+    Invoke the Wiener-Hopf solution to compute the output weights.
+    """
+
+    def __init__(self, ridge_regression=0, *args, **kwargs):
+        super(WienerHopfEsn, self).__init__(*args, **kwargs)
+
+        # smoothing factor for ridge regression
+        self.beta = ridge_regression
+
+    def _compute_output_weights(self, S, D):
+        # See super method for docstring
+        R = np.dot(S.T, S)
+        P = np.dot(S.T, self.g_inv(D))
+
+        # Ridge regression
+        return np.dot(
+            np.linalg.inv(
+                R
+                + self.beta**2 * np.identity(R.shape[1])
+            ),
+            P
+        ).T

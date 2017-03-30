@@ -19,7 +19,7 @@ from matplotlib.offsetbox import AnchoredText
 import numpy as np
 from sklearn.metrics import mean_squared_error
 
-from esn import Esn
+from esn import Esn, WienerHopfEsn
 from esn.activation_functions import lecun, lecun_inv
 from esn.preprocessing import add_noise, scale
 
@@ -39,7 +39,7 @@ logger = logging.getLogger('python-esn.examples')
 def predict(training_inputs, training_outputs, inputs, correct_outputs):
     """Predict the next value for each given input."""
 
-    esn = Esn(
+    esn = WienerHopfEsn(
         in_size=2,
         reservoir_size=200,
         out_size=1,
@@ -155,7 +155,7 @@ def _generate_with_manual_feedback(
 ):
     """Manually feedback predicted values into the inputs."""
 
-    esn = Esn(
+    esn = WienerHopfEsn(
         in_size=2,
         reservoir_size=90,
         out_size=1,
