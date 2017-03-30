@@ -114,17 +114,17 @@ class ESN(object):
         ))
 
     def fit(self, input_data, output_data):
-        expanded_inputs = self._add_bias(input_data)
-        teacher_outputs = add_noise(output_data, self.mu)
+        u = self._add_bias(input_data)
+        y = add_noise(output_data, self.mu)
 
-        S = self._harvest_reservoir_states(expanded_inputs, teacher_outputs)
+        S = self._harvest_reservoir_states(u, y)
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
         S = np.delete(S, np.s_[:self.washout], 0)
-        output_data = np.delete(output_data, np.s_[:self.washout], 0)
+        D = np.delete(output_data, np.s_[:self.washout], 0)
 
-        self.W_out = self._compute_output_weights(S, output_data)
+        self.W_out = self._compute_output_weights(S, D)
 
     def _harvest_reservoir_states(self, u, y):
         """
