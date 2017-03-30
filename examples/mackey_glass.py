@@ -14,7 +14,7 @@ from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
-from esn import ESN
+from esn import Esn
 from esn.preprocessing import scale
 
 
@@ -28,7 +28,7 @@ logger = logging.getLogger('python-esn.examples')
 def predict(training_inputs, training_outputs, inputs, correct_outputs):
     """Predict the next value for each given input."""
 
-    esn = ESN(
+    esn = Esn(
         in_size=1,
         reservoir_size=1000,
         out_size=1,
@@ -58,7 +58,7 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
 def generate(training_inputs, training_outputs, inputs, correct_outputs):
     """Generate values from a starting point."""
 
-    esn = ESN(
+    esn = Esn(
         in_size=0,
         reservoir_size=1000,
         out_size=1,

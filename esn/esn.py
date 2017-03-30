@@ -15,7 +15,7 @@ from . import activation_functions
 from .preprocessing import add_noise
 
 
-class ESN(object):
+class Esn(object):
 
     BIAS = np.array([1])
 
