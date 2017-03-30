@@ -107,14 +107,15 @@ class ESN(object):
         self.y = np.zeros(self.L)
 
     @classmethod
-    def _add_bias(cls, input_data):
-        return np.hstack((
-            np.broadcast_to(cls.BIAS, (input_data.shape[0], cls.BIAS.shape[0])),
-            input_data
-        ))
+    def _prepend_bias(cls, input_data, sequence=False):
+        bias = cls.BIAS if not sequence else np.broadcast_to(
+            cls.BIAS,
+            (input_data.shape[0], cls.BIAS.shape[0])
+        )
+        return np.hstack((bias, input_data))
 
     def fit(self, input_data, output_data):
-        u = self._add_bias(input_data)
+        u = self._prepend_bias(input_data, sequence=True)
         y = add_noise(output_data, self.mu)
 
         S = self._harvest_reservoir_states(u, y)
@@ -195,7 +196,8 @@ class ESN(object):
         ).T
 
     def predict(self, input_date):
-        u = np.hstack((self.BIAS, input_date))
+        u = self._prepend_bias(input_date)
+
         self.x = self._update_state(u, self.x, self.y)
         z = np.hstack((u, self.x))
 
