@@ -187,7 +187,7 @@ class Esn(object):
         """
         return np.dot(
             np.linalg.pinv(S),
-            D
+            self.g_inv(D)
         ).T
 
     def predict(self, input_date):
