@@ -8,6 +8,7 @@ from __future__ import (
 )
 
 import numpy as np
+import padasip as pa
 from scipy import sparse
 from scipy.sparse import linalg
 
@@ -17,7 +18,7 @@ from .preprocessing import add_noise
 
 class Esn(object):
     """
-    Model an Echo State Network
+    Model an Echo State Network.
 
     Use the pseudoinverse of the extended reservoir states to compute the output
     weights.
@@ -228,7 +229,7 @@ class Esn(object):
 
 class WienerHopfEsn(Esn):
     """
-    Model an Echo State Network
+    Model an Echo State Network.
 
     Invoke the Wiener-Hopf solution to compute the output weights.
     """
@@ -252,3 +253,35 @@ class WienerHopfEsn(Esn):
             ),
             P
         ).T
+
+
+class RlsEsn(Esn):
+    """
+    Model an Echo State Network.
+
+    Update the output weights online through an RLS filter.
+    """
+
+    def fit(self, input_data, output_data):
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.mu)
+
+        # TODO: one per output neuron?
+        rls = pa.filters.FilterRLS(
+            self.BIAS.size + self.K + self.N,  # TODO: Think about output feedback and nonlinear augmentation
+            # mu=0.998,  # TODO: Make configurable (as self.lambda?)
+            # eps=0.0000000001,
+            w=str('zeros'),
+        )
+
+        n_max = len(u)
+        for n in range(n_max):
+            self.x = self._update_state(u[n], self.x, self.y, self.nu)
+            self.y = y_teach[n]
+
+            if n > self.washout:
+                v = np.hstack((u[n], self.x))
+                # y = rls.predict(v)
+                rls.adapt(y_teach[n], v)
+
+        self.W_out = rls.w.reshape((self.L, self.BIAS.size + self.K + self.N))  # TODO: Think about multiple outputs
