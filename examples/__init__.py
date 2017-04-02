@@ -84,6 +84,10 @@ def dispatch_examples():
     sine_examples.required = True
 
     sine_examples.add_parser(
+        'simple',
+        help=sine.simple.__doc__
+    )
+    sine_examples.add_parser(
         'predict',
         help=sine.predict.__doc__
     )
@@ -116,6 +120,8 @@ def dispatch_examples():
             example = example_group.generate_with_manual_feedback
     elif args.example == 'predict':
         example = example_group.predict
+    elif args.example == 'simple':
+        example = example_group.simple
 
     # explicitly seed PRNG for comparable runs
     np.random.seed(48)

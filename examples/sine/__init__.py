@@ -111,4 +111,5 @@ from . import (
     generate_with_manual_feedback,
     generate_with_structural_feedback,
     predict,
+    simple,
 )
