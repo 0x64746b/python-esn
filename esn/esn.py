@@ -43,7 +43,6 @@ class Esn(object):
             ),
             output_feedback=False,
             teacher_noise=0,
-            _num_tracked_reservoir_activations=0
     ):
         # dimension of input signal
         self.K = in_size
@@ -112,8 +111,8 @@ class Esn(object):
         # the number of most influential reservoir units to track
         #  the actual tracked number can be lower if a unit is the most
         #  influential one for multiple outputs.
-        self._num_tracked_units = _num_tracked_reservoir_activations
-        self._tracked_reservoir_activations = None
+        self.num_tracked_units = 0
+        self.tracked_reservoir_activations = None
 
     @classmethod
     def _prepend_bias(cls, input_data, sequence=False):
@@ -136,7 +135,7 @@ class Esn(object):
 
         self.W_out = self._compute_output_weights(S, D)
 
-        if self._num_tracked_units:
+        if self.num_tracked_units:
             self._track_reservoir_units(S)
 
     def _harvest_reservoir_states(self, u, y):
@@ -204,9 +203,9 @@ class Esn(object):
         # flat indices of highest weights
         idx = np.argpartition(
             self.W_out.flatten(),
-            -self._num_tracked_units)[-self._num_tracked_units:]
+            -self.num_tracked_units)[-self.num_tracked_units:]
         tracked_units = np.vstack(np.unravel_index(idx, self.W_out.shape))[1]
-        self._tracked_reservoir_activations = S[:, tracked_units]
+        self.tracked_reservoir_activations = S[:, tracked_units]
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
