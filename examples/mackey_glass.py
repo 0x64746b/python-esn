@@ -115,7 +115,40 @@ def _generate_with_manual_feedback(
         correct_outputs
 ):
     """Manually feedback predicted values into the inputs."""
-    pass
+
+    esn = Esn(
+        in_size=1,
+        reservoir_size=1000,
+        out_size=1,
+        spectral_radius=0.75,
+        leaking_rate=0.3,
+        sparsity=0.95,
+        initial_transients=100,
+        state_noise=1e-10,
+    )
+
+    # train
+    esn.fit(training_inputs, training_outputs)
+
+    # test
+    predicted_outputs = [esn.predict(inputs[0])]
+    for i in range(len(inputs)-1):
+        predicted_outputs.append(esn.predict(predicted_outputs[i]))
+
+    #  debug
+    for i, predicted_date in enumerate([inputs[0]] + predicted_outputs[:-1]):
+        logger.debug(
+            '% f -> % f (Δ % f)',
+            predicted_date,
+            predicted_outputs[i],
+            correct_outputs[i] - predicted_outputs[i]
+        )
+
+    plot_results(
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with manual feedback'
+    )
 
 
 def plot_results(reference, predicted, mode):
