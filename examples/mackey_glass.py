@@ -55,8 +55,21 @@ def predict(training_inputs, training_outputs, inputs, correct_outputs):
     plot_results(correct_outputs, predicted_outputs, mode='predict')
 
 
-def generate(training_inputs, training_outputs, inputs, correct_outputs):
+def generate(*data, **args):
     """Generate values from a starting point."""
+    if args['structural_feedback']:
+        _generate_with_structural_feedback(*data)
+    else:
+        _generate_with_manual_feedback(*data)
+
+
+def _generate_with_structural_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Use an ESN with output feedback."""
 
     esn = Esn(
         in_size=0,
@@ -66,6 +79,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
         leaking_rate=0.3,
         sparsity=0.95,
         initial_transients=100,
+        state_noise=1e-10,
         output_feedback=True,
     )
 
@@ -75,6 +89,7 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
 
     esn.fit(training_inputs, training_outputs)
 
+    # predict "no" inputs
     predicted_outputs = [esn.predict(input_date)[0] for input_date in inputs]
 
     # debug
@@ -86,7 +101,21 @@ def generate(training_inputs, training_outputs, inputs, correct_outputs):
             correct_outputs[i] - predicted_outputs[i]
         )
 
-    plot_results(correct_outputs, predicted_outputs, mode='generate')
+    plot_results(
+        correct_outputs,
+        predicted_outputs,
+        mode='generate with structural feedback'
+    )
+
+
+def _generate_with_manual_feedback(
+        training_inputs,
+        training_outputs,
+        inputs,
+        correct_outputs
+):
+    """Manually feedback predicted values into the inputs."""
+    pass
 
 
 def plot_results(reference, predicted, mode):
@@ -162,12 +191,32 @@ def parse_command_line_args():
         'generate',
         help=generate.__doc__
     )
+
+    feedback_type = generate_command.add_mutually_exclusive_group(
+        required=False
+    )
+    feedback_type.add_argument(
+        '-s',
+        '--structural-feedback',
+        dest='structural_feedback',
+        action='store_true',
+        help=_generate_with_structural_feedback.__doc__
+    )
+    feedback_type.add_argument(
+        '-m',
+        '--manual-feedback',
+        dest='structural_feedback',
+        action='store_false',
+        help=_generate_with_manual_feedback.__doc__
+    )
+    feedback_type.set_defaults(structural_feedback=True)
+
     generate_command.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
-    return main_command.parse_args()
+    return vars(main_command.parse_args())
 
 
 COMMANDS = {
@@ -180,13 +229,13 @@ def main():
     """The main entry point."""
     args = parse_command_line_args()
 
-    setup_logging(args.verbosity)
+    setup_logging(args.pop('verbosity'))
 
     # explicitly seed PRNG for comparable runs
     np.random.seed(48)
 
-    data = load_data(args.data_file)
-    COMMANDS[args.sub_command](*data)
+    data = load_data(args.pop('data_file'))
+    COMMANDS[args.pop('sub_command')](*data, **args)
 
 
 if __name__ == '__main__':
