@@ -108,6 +108,12 @@ class Esn(object):
         # initial output
         self.y = np.zeros(self.L)
 
+        # the number of most influential reservoir units to track
+        #  the actual tracked number can be lower if a unit is the most
+        #  influential one for multiple outputs.
+        self.num_tracked_units = 0
+        self.tracked_reservoir_activations = None
+
     @classmethod
     def _prepend_bias(cls, input_data, sequence=False):
         bias = cls.BIAS if not sequence else np.broadcast_to(
@@ -128,6 +134,9 @@ class Esn(object):
         D = np.delete(output_data, np.s_[:self.washout], 0)
 
         self.W_out = self._compute_output_weights(S, D)
+
+        if self.num_tracked_units:
+            self._track_reservoir_units(S)
 
     def _harvest_reservoir_states(self, u, y):
         """
@@ -189,6 +198,14 @@ class Esn(object):
             np.linalg.pinv(S),
             self.g_inv(D)
         ).T
+
+    def _track_reservoir_units(self, S):
+        # flat indices of highest weights
+        idx = np.argpartition(
+            self.W_out.flatten(),
+            -self.num_tracked_units)[-self.num_tracked_units:]
+        tracked_units = np.vstack(np.unravel_index(idx, self.W_out.shape))[1]
+        self.tracked_reservoir_activations = S[:, tracked_units]
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
