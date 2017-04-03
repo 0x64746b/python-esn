@@ -266,6 +266,8 @@ class RlsEsn(Esn):
         u = self._prepend_bias(input_data, sequence=True)
         y_teach = add_noise(output_data, self.mu)
 
+        n_max = len(u)
+
         # TODO: one per output neuron?
         rls = pa.filters.FilterRLS(
             self.BIAS.size + self.K + self.N,  # TODO: Think about output feedback and nonlinear augmentation
@@ -274,7 +276,9 @@ class RlsEsn(Esn):
             w=str('zeros'),
         )
 
-        n_max = len(u)
+        if self.num_tracked_units:
+            tracked_states = np.zeros((n_max, self.BIAS.size + self.K + self.N))
+
         for n in range(n_max):
             self.x = self._update_state(u[n], self.x, self.y, self.nu)
             self.y = y_teach[n]
@@ -284,4 +288,10 @@ class RlsEsn(Esn):
                 # y = rls.predict(v)
                 rls.adapt(y_teach[n], v)
 
+                if self.num_tracked_units:
+                    tracked_states[n] = v
+
         self.W_out = rls.w.reshape((self.L, self.BIAS.size + self.K + self.N))  # TODO: Think about multiple outputs
+
+        if self.num_tracked_units:
+            self.tracked_units = self.track_most_influential_units(tracked_states[self.washout:])
