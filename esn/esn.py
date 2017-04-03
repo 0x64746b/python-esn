@@ -43,6 +43,7 @@ class Esn(object):
             ),
             output_feedback=False,
             teacher_noise=0,
+            _num_tracked_reservoir_activations=0
     ):
         # dimension of input signal
         self.K = in_size
@@ -108,6 +109,14 @@ class Esn(object):
         # initial output
         self.y = np.zeros(self.L)
 
+        # the reservoir units to track
+        self._tracked_reservoir_units = np.random.choice(
+            np.arange(1, self.K + self.N),
+            _num_tracked_reservoir_activations,
+            replace=False,
+        )
+        self._tracked_reservoir_activations = None
+
     @classmethod
     def _prepend_bias(cls, input_data, sequence=False):
         bias = cls.BIAS if not sequence else np.broadcast_to(
@@ -126,6 +135,8 @@ class Esn(object):
         # corresponding outputs
         S = np.delete(S, np.s_[:self.washout], 0)
         D = np.delete(output_data, np.s_[:self.washout], 0)
+
+        self._tracked_reservoir_activations = S[:, self._tracked_reservoir_units]
 
         self.W_out = self._compute_output_weights(S, D)
 
