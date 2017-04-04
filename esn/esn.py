@@ -112,7 +112,7 @@ class Esn(object):
         #  the actual tracked number can be lower if a unit is the most
         #  influential one for multiple outputs.
         self.num_tracked_units = 0
-        self.tracked_reservoir_activations = None
+        self.tracked_activations = None
 
     @classmethod
     def _prepend_bias(cls, input_data, sequence=False):
@@ -205,7 +205,7 @@ class Esn(object):
             np.abs(self.W_out).flatten(),
             -self.num_tracked_units)[-self.num_tracked_units:]
         tracked_units = np.vstack(np.unravel_index(idx, self.W_out.shape))[1]
-        self.tracked_reservoir_activations = S[:, tracked_units]
+        self.tracked_activations = S[:, self.tracked_units]
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
