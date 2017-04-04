@@ -202,7 +202,7 @@ class Esn(object):
     def _track_reservoir_units(self, S):
         # flat indices of highest weights
         idx = np.argpartition(
-            self.W_out.flatten(),
+            np.abs(self.W_out).flatten(),
             -self.num_tracked_units)[-self.num_tracked_units:]
         tracked_units = np.vstack(np.unravel_index(idx, self.W_out.shape))[1]
         self.tracked_reservoir_activations = S[:, tracked_units]
