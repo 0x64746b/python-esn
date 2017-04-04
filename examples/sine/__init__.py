@@ -25,24 +25,64 @@ NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
 
 
-def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
+def plot_results(
+        frequencies,
+        correct_outputs,
+        predicted_outputs,
+        mode,
+        debug=()
+):
     try:
         rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
     except ValueError as error:
         rmse = error
-    plt.plot(
+
+    if not debug:
+        fig, data = plt.subplots()
+    else:
+        fig, (data, activations, output_weights) = plt.subplots(nrows=3)
+
+    data.plot(
         frequencies,
         color='r',
         label='Input frequency'
     )
-    plt.plot(correct_outputs, label='Correct outputs')
-    plt.plot(predicted_outputs, label='Predicted outputs')
-    plt.gca().xaxis.set_major_locator(
+    data.plot(correct_outputs, label='Correct outputs')
+    data.plot(predicted_outputs, label='Predicted outputs')
+    data.xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
-    plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
-    plt.title('Mode: {}'.format(mode))
-    plt.legend()
+    data.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
+    data.legend()
+    data.set_title('Mode: {}'.format(mode))
+
+    if debug:
+        tracked_units, tracked_activations, w_out = debug
+        print('W_out:', w_out.shape)
+
+        for i, reservoir_unit in enumerate(tracked_units):
+            weights = []
+
+            for output_unit in range(w_out.shape[0]):
+                weights.append(w_out[output_unit][reservoir_unit])
+
+            activations.plot(
+                tracked_activations[:,i],
+                label='Unit {} (weights: {})'.format(reservoir_unit, weights))
+
+        activations.legend()
+        activations.set_title('Activations of most influential units')
+
+        for output_unit in range(w_out.shape[0]):
+            output_weights.plot(
+                w_out[output_unit],
+                label='Unit {}'.format(output_unit)
+            )
+
+        output_weights.legend()
+        output_weights.set_title('Output weights')
+
+    plt.tight_layout()
     plt.show()
 
 

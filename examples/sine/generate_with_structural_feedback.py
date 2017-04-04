@@ -56,6 +56,7 @@ class Example(object):
             spectral_radius=0.25,
             leaking_rate=0.1,
             state_noise=0.007,
+            num_tracked_units=3,
         )
 
         # debug
@@ -72,7 +73,12 @@ class Example(object):
             self.test_inputs,
             self.test_outputs,
             predicted_outputs,
-            mode='generate with structural feedback'
+            mode='generate with structural feedback',
+            debug=(
+                self.esn.tracked_units,
+                self.esn.tracked_activations,
+                self.esn.W_out
+            ),
         )
 
     def optimize(self, exp_key):
@@ -128,6 +134,7 @@ class Example(object):
             state_noise,
             bias_scale=1.0,
             frequency_scale=1.0,
+            num_tracked_units=0,
     ):
         self.esn = Esn(
             in_size=1,
@@ -143,6 +150,7 @@ class Example(object):
             output_activation_function=(lecun, lecun_inv),
             output_feedback=True,
         )
+        self.esn.num_tracked_units = num_tracked_units
 
         # scale input weights
         self.esn.W_in *= [bias_scale, frequency_scale]

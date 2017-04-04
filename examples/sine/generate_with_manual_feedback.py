@@ -59,6 +59,7 @@ class Example(object):
             ridge_regression=0.001,
             bias_scale=0.1,
             frequency_scale=1.2,
+            num_tracked_units=3,
         )
 
         # debug
@@ -75,7 +76,12 @@ class Example(object):
             self.test_inputs[:, 0],
             self.test_outputs,
             predicted_outputs,
-            mode='generate with manual feedback'
+            mode='generate with manual feedback',
+            debug=(
+                self.esn.tracked_units,
+                self.esn.tracked_activations,
+                self.esn.W_out
+            ),
         )
 
     def optimize(self, exp_key):
@@ -132,7 +138,8 @@ class Example(object):
             ridge_regression,
             bias_scale=1.0,
             frequency_scale=1.0,
-            signal_scale=1.0
+            signal_scale=1.0,
+            num_tracked_units=0,
     ):
         self.esn = WienerHopfEsn(
             in_size=2,
@@ -146,6 +153,7 @@ class Example(object):
             squared_network_state=True,
             activation_function=lecun,
         )
+        self.esn.num_tracked_units = num_tracked_units
 
         # scale input weights
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
