@@ -293,7 +293,7 @@ class RlsEsn(Esn):
                     v = np.hstack((v, v[1:]**2))
 
                 # y = rls.predict(v)
-                rls.adapt(y_teach[n], v)
+                rls.adapt(self.g_inv(y_teach[n]), v)
 
                 if self.num_tracked_units:
                     tracked_states[n] = v
