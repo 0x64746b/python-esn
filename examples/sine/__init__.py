@@ -30,7 +30,7 @@ def plot_results(
         correct_outputs,
         predicted_outputs,
         mode,
-        debug=()
+        debug=None,
 ):
     try:
         rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
@@ -39,8 +39,10 @@ def plot_results(
 
     if not debug:
         fig, data = plt.subplots()
+    elif 'test_activations' in debug:
+        fig, (data, extra, training_activations) = plt.subplots(nrows=3)
     else:
-        fig, (data, activations, output_weights) = plt.subplots(nrows=3)
+        fig, (data, training_activations, extra) = plt.subplots(nrows=3)
 
     data.plot(
         frequencies,
@@ -57,30 +59,32 @@ def plot_results(
     data.set_title('Mode: {}'.format(mode))
 
     if debug:
-        tracked_units, tracked_activations, w_out = debug
-        print('W_out:', w_out.shape)
+        training_activations.set_title(
+            'Activations of most influential units during training'
+        )
+        training_activations.plot(
+            np.array(list(debug['training_activations'].values())).T
+        )
+        training_activations.legend(
+            [
+                'Unit {} (weights: {})'.format(unit, debug['w_out'][:, unit])
+                for unit in debug['training_activations']
+            ]
+        )
 
-        for i, reservoir_unit in enumerate(tracked_units):
-            weights = []
-
-            for output_unit in range(w_out.shape[0]):
-                weights.append(w_out[output_unit][reservoir_unit])
-
-            activations.plot(
-                tracked_activations[:,i],
-                label='Unit {} (weights: {})'.format(reservoir_unit, weights))
-
-        activations.legend()
-        activations.set_title('Activations of most influential units')
-
-        for output_unit in range(w_out.shape[0]):
-            output_weights.plot(
-                w_out[output_unit],
-                label='Unit {}'.format(output_unit)
+        if 'test_activations' in debug:
+            extra.set_title('Activations during prediction')
+            extra.plot(np.array(list(debug['test_activations'].values())).T)
+            extra.legend(
+                ['Unit {}'.format(unit) for unit in debug['test_activations']]
             )
-
-        output_weights.legend()
-        output_weights.set_title('Output weights')
+        else:
+            extra.set_title('Output weights')
+            extra.plot(debug['w_out'].T)
+            extra.legend([
+                'Unit {}'.format(unit)
+                for unit in range(debug['w_out'].shape[0])
+            ])
 
     plt.tight_layout()
     plt.show()

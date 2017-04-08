@@ -74,11 +74,11 @@ class Example(object):
             self.test_outputs,
             predicted_outputs,
             mode='generate with structural feedback',
-            debug=(
-                self.esn.tracked_units,
-                self.esn.tracked_activations,
-                self.esn.W_out
-            ),
+            debug={
+                'training_activations': self.esn.tracked_units,
+                'test_activations': self.test_activations,
+                'w_out': self.esn.W_out,
+            },
         )
 
     def optimize(self, exp_key):
@@ -159,8 +159,26 @@ class Example(object):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
+        S = [np.hstack((
+            self.esn.BIAS,
+            self.test_inputs[0],
+            self.esn.x,
+            self.test_inputs[0]**2,
+            self.esn.x**2))
+        ]
         predicted_outputs = [self.esn.predict(self.test_inputs[0])[0]]
         for i in range(1, len(self.test_inputs)):
             predicted_outputs.append(self.esn.predict(self.test_inputs[i]))
+            S.append(np.hstack((
+                self.esn.BIAS,
+                self.test_inputs[i],
+                self.esn.x,
+                self.test_inputs[i]**2,
+                self.esn.x**2))
+            )
+
+        self.test_activations = self.esn.track_most_influential_units(
+            np.array(S)
+        )
 
         return predicted_outputs
