@@ -255,11 +255,11 @@ class WienerHopfEsn(Esn):
         ).T
 
 
-class RlsEsn(Esn):
+class LmsEsn(Esn):
     """
     Model an Echo State Network.
 
-    Update the output weights online through an RLS filter.
+    Update the output weights online through an adaptive LMS filter.
     """
 
     def fit(self, input_data, output_data):
@@ -273,10 +273,9 @@ class RlsEsn(Esn):
         n_max = len(u)
 
         # TODO: one per output neuron?
-        rls = pa.filters.FilterRLS(
+        lms = pa.filters.FilterLMS(
             state_size,  # TODO: Think about output feedback
-            # mu=0.998,  # TODO: Make configurable (as self.lambda?)
-            # eps=0.0000000001,
+            mu=0.001,  # TODO: Make configurable (as self.lambda?)
             w=str('zeros'),
         )
 
@@ -293,12 +292,12 @@ class RlsEsn(Esn):
                     v = np.hstack((v, v[1:]**2))
 
                 # y = rls.predict(v)
-                rls.adapt(self.g_inv(y_teach[n]), v)
+                lms.adapt(self.g_inv(y_teach[n]), v)
 
                 if self.num_tracked_units:
                     tracked_states[n] = v
 
-        self.W_out = rls.w.reshape((self.L, state_size))  # TODO: Think about multiple outputs
+        self.W_out = lms.w.reshape((self.L, state_size))  # TODO: Think about multiple outputs
 
         if self.num_tracked_units:
             self.tracked_units = self.track_most_influential_units(tracked_states[self.washout:])
