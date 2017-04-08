@@ -32,17 +32,14 @@ def plot_results(
         mode,
         debug=None,
 ):
-    try:
-        rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
-    except ValueError as error:
-        rmse = error
-
     if not debug:
         fig, data = plt.subplots()
     elif 'test_activations' in debug:
         fig, (data, extra, training_activations) = plt.subplots(nrows=3)
     else:
         fig, (data, training_activations, extra) = plt.subplots(nrows=3)
+
+    data.set_title('Mode: {}'.format(mode))
 
     data.plot(
         frequencies,
@@ -51,12 +48,18 @@ def plot_results(
     )
     data.plot(correct_outputs, label='Correct outputs')
     data.plot(predicted_outputs, label='Predicted outputs')
+
     data.xaxis.set_major_locator(
         ticker.MultipleLocator(SAMPLES_PER_PERIOD)
     )
-    data.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
     data.legend()
-    data.set_title('Mode: {}'.format(mode))
+
+    try:
+        rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
+    except ValueError as error:
+        rmse = error.message
+    finally:
+        data.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
 
     if debug:
         training_activations.set_title(
