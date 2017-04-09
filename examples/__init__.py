@@ -115,13 +115,13 @@ def dispatch_examples():
 
     if args.example == 'generate':
         if not args.with_manual_feedback:
-            example = example_group.generate_with_structural_feedback
+            example = example_group.generate_with_structural_feedback.Example
         else:
-            example = example_group.generate_with_manual_feedback
+            example = example_group.generate_with_manual_feedback.Example
     elif args.example == 'predict':
-        example = example_group.predict
+        example = example_group.predict.Example
     elif args.example == 'simple':
-        example = example_group.simple
+        example = example_group.simple.Example
 
     # explicitly seed PRNG for comparable runs
     np.random.seed(48)
