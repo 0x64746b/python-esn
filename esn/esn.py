@@ -80,7 +80,7 @@ class Esn(object):
             self.W_fb = np.zeros((self.N, self.L))
 
         # amount of noise added when forcing teacher outputs
-        self.mu = teacher_noise
+        self.tau = teacher_noise
 
         # leaking rate
         self.alpha = leaking_rate
@@ -125,7 +125,7 @@ class Esn(object):
 
     def fit(self, input_data, output_data):
         u = self._prepend_bias(input_data, sequence=True)
-        y = add_noise(output_data, self.mu)
+        y = add_noise(output_data, self.tau)
 
         S = self._harvest_reservoir_states(u, y)
 
@@ -264,7 +264,7 @@ class LmsEsn(Esn):
 
     def fit(self, input_data, output_data):
         u = self._prepend_bias(input_data, sequence=True)
-        y_teach = add_noise(output_data, self.mu)
+        y_teach = add_noise(output_data, self.tau)
 
         state_size = self.BIAS.size + self.K + self.N
         if self.nonlinear_augmentation:
