@@ -10,8 +10,12 @@ from __future__ import (
 )
 
 import logging
+import pickle
 
+import hyperopt
 import numpy as np
+import scipy
+from sklearn.metrics import mean_squared_error
 
 from esn import Esn
 from esn.activation_functions import lecun, lecun_inv
@@ -48,7 +52,11 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self):
-        predicted_outputs = self._train()
+        predicted_outputs = self._train(
+            spectral_radius=0.25,
+            leaking_rate=0.1,
+            state_noise=0.007,
+        )
 
         # debug
         for i, predicted_date in enumerate([0] + predicted_outputs[:-1]):
@@ -67,21 +75,77 @@ class Example(object):
             mode='generate with structural feedback'
         )
 
-    def _train(self):
+    def optimize(self, exp_key):
+        def objective(hyper_parameters):
+            # re-seed for repeatable results
+            np.random.seed(48)
+
+            try:
+                predicted_outputs = self._train(*hyper_parameters)
+            except scipy.sparse.linalg.ArpackNoConvergence:
+                return {'status': hyperopt.STATUS_FAIL}
+            else:
+                try:
+                    rmse = np.sqrt(mean_squared_error(
+                        self.test_outputs,
+                        predicted_outputs
+                    ))
+                except ValueError:
+                    return {'status': hyperopt.STATUS_FAIL}
+                else:
+                    return {'status': hyperopt.STATUS_OK, 'loss': rmse}
+
+        search_space = (
+            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.quniform('state_noise', 0.0001, 0.1, 0.0001),
+            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
+            hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.1),
+        )
+
+        trials = hyperopt.Trials(exp_key=exp_key)
+
+        best = hyperopt.fmin(
+            objective,
+            space=search_space,
+            algo=hyperopt.tpe.suggest,
+            max_evals=150,
+            trials=trials,
+        )
+
+        with open('{}_trials.pickle'.format(exp_key), 'wb') as trials_file:
+            pickle.dump(trials, trials_file)
+
+        with open('{}_best.pickle'.format(exp_key), 'wb') as result_file:
+            pickle.dump(best, result_file)
+
+        logger.info('Best parameter combination: %s', best)
+
+    def _train(
+            self,
+            spectral_radius,
+            leaking_rate,
+            state_noise,
+            bias_scale=1.0,
+            frequency_scale=1.0,
+    ):
         self.esn = Esn(
             in_size=1,
             reservoir_size=200,
             out_size=1,
-            spectral_radius=0.25,
-            leaking_rate=0.1,
+            spectral_radius=spectral_radius,
+            leaking_rate=leaking_rate,
             sparsity=0.95,
             initial_transients=1000,
-            state_noise=0.007,
+            state_noise=state_noise,
             squared_network_state=True,
             activation_function=lecun,
             output_activation_function=(lecun, lecun_inv),
             output_feedback=True,
         )
+
+        # scale input weights
+        self.esn.W_in *= [bias_scale, frequency_scale]
 
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)

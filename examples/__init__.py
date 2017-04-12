@@ -101,10 +101,19 @@ def dispatch_examples():
         action='store_true',
         help=sine.generate_with_manual_feedback.__doc__
     )
+    sine_generate.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyperparameters of the example instead of running it'
+    )
 
     args = parser.parse_args()
 
     setup_logging(args.verbosity)
+
+    # explicitly seed PRNG for comparable runs
+    np.random.seed(48)
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
@@ -123,10 +132,10 @@ def dispatch_examples():
     elif args.example == 'simple':
         example = example_group.UnparametrizedGenerator()
 
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
-
-    example.run()
+    if 'optimize' in args and args.optimize:
+        example.optimize(args.optimize)
+    else:
+        example.run()
 
 
 def setup_logging(verbosity):
