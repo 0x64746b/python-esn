@@ -262,6 +262,12 @@ class LmsEsn(Esn):
     Update the output weights online through an adaptive LMS filter.
     """
 
+    def __init__(self, learning_rate=pa.consts.MU_LMS, *args, **kwargs):
+        super(LmsEsn, self).__init__(*args, **kwargs)
+
+        # learning rate for the filter
+        self.mu = learning_rate
+
     def fit(self, input_data, output_data):
         u = self._prepend_bias(input_data, sequence=True)
         y_teach = add_noise(output_data, self.tau)
@@ -275,7 +281,7 @@ class LmsEsn(Esn):
         # TODO: one per output neuron?
         lms = pa.filters.FilterLMS(
             state_size,  # TODO: Think about output feedback
-            mu=0.001,  # TODO: Make configurable (as self.lambda?)
+            mu=self.mu,
             w=str('zeros'),
         )
 
