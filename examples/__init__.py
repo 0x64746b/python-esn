@@ -115,18 +115,18 @@ def dispatch_examples():
 
     if args.example == 'generate':
         if not args.with_manual_feedback:
-            example = example_group.generate_with_structural_feedback.Example
+            example = example_group.StructuralFeedbackGenerator(*data)
         else:
-            example = example_group.generate_with_manual_feedback.Example
+            example = example_group.ManualFeedbackGenerator(*data)
     elif args.example == 'predict':
-        example = example_group.predict.Example
+        example = example_group.Predictor(*data)
     elif args.example == 'simple':
-        example = example_group.simple.Example
+        example = example_group.UnparametrizedGenerator()
 
     # explicitly seed PRNG for comparable runs
     np.random.seed(48)
 
-    example.run(*data)
+    example.run()
 
 
 def setup_logging(verbosity):

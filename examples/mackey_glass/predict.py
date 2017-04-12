@@ -21,9 +21,35 @@ logger = logging.getLogger(__name__)
 
 class Example(object):
 
-    @staticmethod
-    def run(training_inputs, training_outputs, test_inputs, test_outputs):
-        esn = WienerHopfEsn(
+    def __init__(
+            self,
+            training_inputs,
+            training_outputs,
+            test_inputs,
+            test_outputs
+    ):
+        self.training_inputs = training_inputs
+        self.training_outputs = training_outputs
+        self.test_inputs = test_inputs
+        self.test_outputs = test_outputs
+
+    def run(self):
+        predicted_outputs = self._train()
+
+        # debug
+        for i, input_date in enumerate(self.test_inputs):
+            logger.debug(
+                '% f -> % f (Δ % f)',
+                input_date,
+                predicted_outputs[i],
+                self.test_outputs[i] - predicted_outputs[i]
+            )
+
+        plot_results(self.test_outputs, predicted_outputs, mode='predict')
+
+    def _train(self):
+
+        self.esn = WienerHopfEsn(
             in_size=1,
             reservoir_size=1000,
             out_size=1,
@@ -34,20 +60,7 @@ class Example(object):
             ridge_regression=0.0001
         )
 
-        esn.fit(training_inputs, training_outputs)
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
-        predicted_outputs = [
-            esn.predict(input_date)
-            for input_date in test_inputs
-        ]
+        return [self.esn.predict(input_date) for input_date in self.test_inputs]
 
-        # debug
-        for i, input_date in enumerate(test_inputs):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                input_date,
-                predicted_outputs[i],
-                test_outputs[i] - predicted_outputs[i]
-            )
-
-        plot_results(test_outputs, predicted_outputs, mode='predict')

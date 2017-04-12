@@ -26,7 +26,7 @@ def plot_results(reference, predicted, mode):
     try:
         rmse = np.sqrt(mean_squared_error(reference, predicted))
     except ValueError as error:
-        rmse = error.message
+        rmse = error
 
     plt.plot(reference, label='Reference')
     plt.plot(predicted, label='Predicted')
@@ -62,8 +62,6 @@ def load_data(file_name):
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
-from . import (
-    generate_with_manual_feedback,
-    generate_with_structural_feedback,
-    predict,
-)
+from .generate_with_manual_feedback import Example as ManualFeedbackGenerator
+from .generate_with_structural_feedback import Example as StructuralFeedbackGenerator
+from .predict import Example as Predictor

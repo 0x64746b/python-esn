@@ -29,7 +29,7 @@ def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
     try:
         rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
     except ValueError as error:
-        rmse = error.message
+        rmse = error
     plt.plot(
         frequencies,
         color='r',
@@ -107,9 +107,7 @@ def load_data():
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
-from . import (
-    generate_with_manual_feedback,
-    generate_with_structural_feedback,
-    predict,
-    simple,
-)
+from .generate_with_manual_feedback import Example as ManualFeedbackGenerator
+from .generate_with_structural_feedback import Example as StructuralFeedbackGenerator
+from .predict import Example as Predictor
+from .simple import Example as UnparametrizedGenerator

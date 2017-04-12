@@ -23,9 +23,52 @@ logger = logging.getLogger(__name__)
 
 class Example(object):
 
-    @staticmethod
-    def run(training_inputs, training_outputs, test_inputs, test_outputs):
-        esn = Esn(
+    def __init__(
+            self,
+            training_inputs,
+            training_outputs,
+            test_inputs,
+            test_outputs
+    ):
+        # format data
+        #  use only the frequency as input,
+        #  the signal is fed back from the output
+        self.training_inputs = np.array(training_inputs[0]).reshape(
+            len(training_inputs[0]),
+            1  # in_size
+        )
+        self.training_outputs = np.array(training_outputs).reshape(
+            len(training_outputs),
+            1  # out_size
+        )
+        self.test_inputs = np.array(test_inputs[0]).reshape(
+            len(test_inputs[0]),
+            1  # in_size
+        )
+        self.test_outputs = test_outputs
+
+    def run(self):
+        predicted_outputs = self._train()
+
+        # debug
+        for i, predicted_date in enumerate([0] + predicted_outputs[:-1]):
+            logger.debug(
+                '% f | % f -> % f (Δ % f)',
+                self.test_inputs[i],
+                predicted_date,
+                predicted_outputs[i],
+                self.test_outputs[i] - predicted_outputs[i]
+            )
+
+        plot_results(
+            self.test_inputs,
+            self.test_outputs,
+            predicted_outputs,
+            mode='generate with structural feedback'
+        )
+
+    def _train(self):
+        self.esn = Esn(
             in_size=1,
             reservoir_size=200,
             out_size=1,
@@ -40,43 +83,12 @@ class Example(object):
             output_feedback=True,
         )
 
-        # format data
-        #  use only the frequency as input,
-        #  the signal is fed back from the output
-        training_inputs = np.array(training_inputs[0]).reshape(
-            len(training_inputs[0]),
-            esn.K
-        )
-        training_outputs = np.array(training_outputs).reshape(
-            len(training_outputs),
-            esn.L
-        )
-        test_inputs = np.array(test_inputs[0]).reshape(
-            len(test_inputs[0]),
-            esn.K
-        )
-
         # train
-        esn.fit(training_inputs, training_outputs)
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
-        predicted_outputs = [esn.predict(test_inputs[0])[0]]
-        for i in range(1, len(test_inputs)):
-            predicted_outputs.append(esn.predict(test_inputs[i]))
+        predicted_outputs = [self.esn.predict(self.test_inputs[0])[0]]
+        for i in range(1, len(self.test_inputs)):
+            predicted_outputs.append(self.esn.predict(self.test_inputs[i]))
 
-        #  debug
-        for i, predicted_date in enumerate([0] + predicted_outputs[:-1]):
-            logger.debug(
-                '% f | % f -> % f (Δ % f)',
-                test_inputs[i],
-                predicted_date,
-                predicted_outputs[i],
-                test_outputs[i] - predicted_outputs[i]
-            )
-
-        plot_results(
-            test_inputs,
-            test_outputs,
-            predicted_outputs,
-            mode='generate with structural feedback'
-        )
+        return predicted_outputs

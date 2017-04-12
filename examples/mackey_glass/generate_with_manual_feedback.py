@@ -23,9 +23,38 @@ logger = logging.getLogger(__name__)
 
 class Example(object):
 
-    @staticmethod
-    def run(training_inputs, training_outputs, test_inputs, test_outputs):
-        esn = Esn(
+    def __init__(
+            self,
+            training_inputs,
+            training_outputs,
+            test_inputs,
+            test_outputs
+    ):
+        self.training_inputs = training_inputs
+        self.training_outputs = training_outputs
+        self.test_inputs = test_inputs
+        self.test_outputs = test_outputs
+
+    def run(self):
+        predicted_outputs = self._train()
+
+        # debug
+        for i, predicted_date in enumerate([self.test_inputs[0]] + predicted_outputs[:-1]):
+            logger.debug(
+                '% f -> % f (Δ % f)',
+                predicted_date,
+                predicted_outputs[i],
+                self.test_outputs[i] - predicted_outputs[i]
+            )
+
+        plot_results(
+            self.test_outputs,
+            predicted_outputs,
+            mode='generate with manual feedback'
+        )
+
+    def _train(self):
+        self.esn = Esn(
             in_size=1,
             reservoir_size=1000,
             out_size=1,
@@ -37,24 +66,11 @@ class Example(object):
         )
 
         # train
-        esn.fit(training_inputs, training_outputs)
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
-        predicted_outputs = [esn.predict(test_inputs[0])]
-        for i in range(len(test_inputs)-1):
-            predicted_outputs.append(esn.predict(predicted_outputs[i]))
+        predicted_outputs = [self.esn.predict(self.test_inputs[0])]
+        for i in range(len(self.test_inputs) - 1):
+            predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
-        #  debug
-        for i, predicted_date in enumerate([test_inputs[0]] + predicted_outputs[:-1]):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                predicted_date,
-                predicted_outputs[i],
-                test_outputs[i] - predicted_outputs[i]
-            )
-
-        plot_results(
-            test_outputs,
-            predicted_outputs,
-            mode='generate with manual feedback'
-        )
+        return predicted_outputs
