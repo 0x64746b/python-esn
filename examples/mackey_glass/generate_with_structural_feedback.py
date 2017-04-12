@@ -51,7 +51,8 @@ class Example(object):
         plot_results(
             self.test_outputs,
             predicted_outputs,
-            mode='generate with structural feedback'
+            mode='generate with structural feedback',
+            tracked_activations=self.esn.tracked_units,
         )
 
     def _train(self):
@@ -66,6 +67,7 @@ class Example(object):
             state_noise=1e-10,
             output_feedback=True,
         )
+        self.esn.num_tracked_units=5
 
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)

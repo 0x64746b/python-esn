@@ -22,7 +22,7 @@ NUM_TRAINING_SAMPLES = 2000
 NUM_PREDICTION_SAMPLES = 1000
 
 
-def plot_results(reference, predicted, mode):
+def plot_results(reference, predicted, mode, tracked_activations=None):
     try:
         rmse = np.sqrt(mean_squared_error(reference, predicted))
     except ValueError as error:
@@ -30,6 +30,12 @@ def plot_results(reference, predicted, mode):
 
     plt.plot(reference, label='Reference')
     plt.plot(predicted, label='Predicted')
+    if tracked_activations:
+        for unit in tracked_activations:
+            plt.plot(
+                tracked_activations[unit][:len(predicted)],
+                label='unit {}'.format(unit)
+            )
     plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
     plt.gca().set_title('Mode: {}'.format(mode))
     plt.legend()

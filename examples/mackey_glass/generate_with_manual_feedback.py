@@ -50,7 +50,8 @@ class Example(object):
         plot_results(
             self.test_outputs,
             predicted_outputs,
-            mode='generate with manual feedback'
+            mode='generate with manual feedback',
+            tracked_activations=self.esn.tracked_units,
         )
 
     def _train(self):
@@ -64,6 +65,7 @@ class Example(object):
             initial_transients=100,
             state_noise=1e-10,
         )
+        self.esn.num_tracked_units = 2
 
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)
