@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 class Example(object):
 
     def __init__(self):
-        # format data
-        num_periods = 10000
+        # generate data
+        num_periods = 4000
         sampling_rate = 50  # points per period
         num_sampling_points = num_periods * sampling_rate
 
@@ -44,7 +44,7 @@ class Example(object):
             + np.sin(4 * sampling_points)
         ).reshape(num_sampling_points, 1)
 
-        self.training_inputs = add_noise(signal[:training_length], 1e-7)
+        self.training_inputs = signal[:training_length]
         self.training_outputs = signal[1:training_length + 1]
 
         # consume training data
@@ -53,9 +53,15 @@ class Example(object):
         self.test_inputs = signal[:test_length]
         self.test_outputs = signal[1:test_length + 1]
 
-
     def run(self):
-        predicted_outputs = self._train()
+        predicted_outputs = self._train(
+            spectral_radius=0.99,
+            leaking_rate=0.33,
+            bias_scale=0.2,
+            signal_scale=0.2,
+            state_noise=1e-7,
+            input_noise=1e-7,
+        )
 
         # debug
         for i, predicted_date in enumerate([self.test_inputs[0]] + predicted_outputs[:-1]):
@@ -73,18 +79,33 @@ class Example(object):
             mode='generate simple signal'
         )
 
-    def _train(self):
+    def _train(
+            self,
+            spectral_radius,
+            leaking_rate,
+            bias_scale,
+            signal_scale,
+            state_noise,
+            input_noise,
+    ):
         self.esn = Esn(
             in_size=1,
             reservoir_size=200,
             out_size=1,
-            leaking_rate=0.33,
-            state_noise=1e-7,
+            spectral_radius=spectral_radius,
+            leaking_rate=leaking_rate,
+            state_noise=state_noise,
+            sparsity=0.95,
+            initial_transients=300,
+            squared_network_state=True,
         )
-        self.esn.W_in *= 0.2
+        self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(
+            add_noise(self.training_inputs, input_noise),
+            self.training_outputs
+        )
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
