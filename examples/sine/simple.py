@@ -60,11 +60,11 @@ class Example(object):
 
     def run(self):
         predicted_outputs = self._train(
-            spectral_radius=0.99,
-            leaking_rate=0.33,
+            spectral_radius=1.27,
+            leaking_rate=0.51,
             learning_rate=0.01,
-            bias_scale=0.2,
-            signal_scale=0.2,
+            bias_scale=0.5,
+            signal_scale=1.5,
             state_noise=1e-7,
             input_noise=1e-7,
         )
