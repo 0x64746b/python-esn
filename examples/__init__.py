@@ -83,14 +83,22 @@ def dispatch_examples():
     )
     sine_examples.required = True
 
-    sine_examples.add_parser(
+    sine_simple = sine_examples.add_parser(
         'simple',
         help=sine.simple.__doc__
     )
+    sine_simple.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyperparameters of the example instead of running it'
+    )
+
     sine_examples.add_parser(
         'predict',
         help=sine.predict.__doc__
     )
+
     sine_generate = sine_examples.add_parser(
         'generate',
         help=sine.generate_with_structural_feedback.__doc__
