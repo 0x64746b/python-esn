@@ -16,6 +16,7 @@ import numpy as np
 
 from esn import Esn
 from esn.examples.sine import plot_results
+from esn.preprocessing import add_noise, scale
 
 
 logger = logging.getLogger(__name__)
@@ -25,18 +26,32 @@ class Example(object):
 
     def __init__(self):
         # format data
-        num_periods = 150
+        num_periods = 10000
+        sampling_rate = 50  # points per period
+        num_sampling_points = num_periods * sampling_rate
+
+        training_length = int(num_sampling_points * 0.7)
+        test_length = 500
+
         sampling_points = np.linspace(
             0,
-            num_periods*2*np.pi,
-            num=num_periods*50
+            num_periods * 2 * np.pi,
+            num=num_sampling_points
         )
-        signal = np.sin(sampling_points).reshape(num_periods*50, 1)
+        signal = scale(
+            np.sin(sampling_points)
+            + np.sin(2 * sampling_points)
+            + np.sin(4 * sampling_points)
+        ).reshape(num_sampling_points, 1)
 
-        self.training_inputs = signal[:-1]
-        self.training_outputs = signal[1:]
-        self.test_inputs = signal[:170]
-        self.test_outputs = signal[1:170 + 1]
+        self.training_inputs = add_noise(signal[:training_length], 1e-7)
+        self.training_outputs = signal[1:training_length + 1]
+
+        # consume training data
+        signal = np.delete(signal, np.s_[:training_length])
+
+        self.test_inputs = signal[:test_length]
+        self.test_outputs = signal[1:test_length + 1]
 
 
     def run(self):
@@ -63,8 +78,10 @@ class Example(object):
             in_size=1,
             reservoir_size=200,
             out_size=1,
-            leaking_rate=0.3,
+            leaking_rate=0.33,
+            state_noise=1e-7,
         )
+        self.esn.W_in *= 0.2
 
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)
