@@ -21,7 +21,7 @@ setuptools.setup(
 
     keywords='ESN',
 
-    packages=['esn', 'esn.examples'],
+    packages=['esn', 'esn.examples', 'esn.examples.sine', 'esn.examples.mackey_glass'],
     package_dir={'esn.examples': 'examples'},
 
     install_requires=[
@@ -37,8 +37,12 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'esn_sine = esn.examples.sine:main',
-            'esn_mackey_glass = esn.examples.mackey_glass:main',
+            'esn_sine_predict = esn.examples.sine.predict:main',
+            'esn_sine_generate_with_structural_feedback = esn.examples.sine.generate_with_structural_feedback:main',
+            'esn_sine_generate_with_manual_feedback = esn.examples.sine.generate_with_manual_feedback:main',
+            'esn_mackey_glass_predict = esn.examples.mackey_glass.predict:main',
+            'esn_mackey_glass_generate_with_structural_feedback = esn.examples.mackey_glass.generate_with_structural_feedback:main',
+            'esn_mackey_glass_generate_with_manual_feedback = esn.examples.mackey_glass.generate_with_manual_feedback:main',
         ],
     }
 )
