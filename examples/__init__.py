@@ -12,6 +12,5 @@ import logging
 
 def setup_logging(verbosity):
     logging.basicConfig(
-        format='%(name)s [%(levelname)s]: %(message)s',
         level=max(logging.DEBUG, logging.WARNING - verbosity * 10)
     )
