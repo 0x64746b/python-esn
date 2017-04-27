@@ -37,12 +37,7 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'esn_sine_predict = esn.examples.sine.predict:main',
-            'esn_sine_generate_with_structural_feedback = esn.examples.sine.generate_with_structural_feedback:main',
-            'esn_sine_generate_with_manual_feedback = esn.examples.sine.generate_with_manual_feedback:main',
-            'esn_mackey_glass_predict = esn.examples.mackey_glass.predict:main',
-            'esn_mackey_glass_generate_with_structural_feedback = esn.examples.mackey_glass.generate_with_structural_feedback:main',
-            'esn_mackey_glass_generate_with_manual_feedback = esn.examples.mackey_glass.generate_with_manual_feedback:main',
+            'esn_examples = esn.examples:dispatch_examples',
         ],
     }
 )

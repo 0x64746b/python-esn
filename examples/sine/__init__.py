@@ -1,5 +1,8 @@
 # coding: utf-8
 
+"""Learn a sine signal."""
+
+
 from __future__ import (
     absolute_import,
     division,
@@ -100,3 +103,12 @@ def load_data():
     correct_outputs = signal[1:]
 
     return training_inputs, training_outputs, inputs, correct_outputs
+
+
+# make modules importable from the package name space.
+#  import late to break cyclic import
+from . import (
+    generate_with_manual_feedback,
+    generate_with_structural_feedback,
+    predict,
+)

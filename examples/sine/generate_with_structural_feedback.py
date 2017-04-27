@@ -9,21 +9,19 @@ from __future__ import (
     unicode_literals,
 )
 
-import argparse
 import logging
 
 import numpy as np
 
 from esn import Esn
 from esn.activation_functions import lecun, lecun_inv
-from esn.examples import setup_logging
-from esn.examples.sine import load_data, plot_results
+from esn.examples.sine import plot_results
 
 
 logger = logging.getLogger(__name__)
 
 
-def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
+def run(training_inputs, training_outputs, test_inputs, test_outputs):
     esn = Esn(
         in_size=1,
         reservoir_size=200,
@@ -75,25 +73,3 @@ def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
         predicted_outputs,
         mode='generate with structural feedback'
     )
-
-
-def main():
-    """The main entry point."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '-v',
-        '--verbose',
-        dest='verbosity',
-        action='count',
-        default=0,
-        help='Increase the log level with each use'
-    )
-    args = parser.parse_args()
-
-    setup_logging(args.verbosity)
-
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
-
-    data = load_data()
-    _generate(*data)

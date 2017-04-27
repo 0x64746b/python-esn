@@ -1,5 +1,8 @@
 # coding: utf-8
 
+"""Learn the Mackey-Glass equation."""
+
+
 from __future__ import (
     absolute_import,
     division,
@@ -55,3 +58,12 @@ def load_data(file_name):
     correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
 
     return training_inputs, training_outputs, inputs, correct_outputs
+
+
+# make modules importable from the package name space.
+#  import late to break cyclic import
+from . import (
+    generate_with_manual_feedback,
+    generate_with_structural_feedback,
+    predict,
+)

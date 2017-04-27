@@ -9,20 +9,18 @@ from __future__ import (
     unicode_literals,
 )
 
-import argparse
 import logging
 
 import numpy as np
 
 from esn import Esn
-from esn.examples import setup_logging
-from esn.examples.mackey_glass import load_data, plot_results
+from esn.examples.mackey_glass import plot_results
 
 
 logger = logging.getLogger(__name__)
 
 
-def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
+def run(training_inputs, training_outputs, test_inputs, test_outputs):
     esn = Esn(
         in_size=0,
         reservoir_size=1000,
@@ -58,29 +56,3 @@ def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
         predicted_outputs,
         mode='generate with structural feedback'
     )
-
-
-def main():
-    """The main entry point."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '-v',
-        '--verbose',
-        dest='verbosity',
-        action='count',
-        default=0,
-        help='Increase the log level with each use'
-    )
-    parser.add_argument(
-        'data_file',
-        help='the file containing the data to learn'
-    )
-    args = parser.parse_args()
-
-    setup_logging(args.verbosity)
-
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
-
-    data = load_data(args.data_file)
-    _generate(*data)

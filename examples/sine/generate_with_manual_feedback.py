@@ -1,9 +1,8 @@
 # coding: utf-8
 
 """
-Generate values from a starting point.
-
-Manually feed back predicted values into a `WienerHopfESN`.
+Manually feed back predicted values into a `WienerHopfESN`
+instead of using structural feedback.
 """
 
 from __future__ import (
@@ -13,7 +12,6 @@ from __future__ import (
     unicode_literals,
 )
 
-import argparse
 import logging
 
 import numpy as np
@@ -21,8 +19,7 @@ import numpy as np
 from esn import WienerHopfEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
-from esn.examples import setup_logging
-from esn.examples.sine import load_data, plot_results
+from esn.examples.sine import plot_results
 
 
 INPUT_NOISE_FACTOR = 0.03
@@ -31,7 +28,7 @@ INPUT_NOISE_FACTOR = 0.03
 logger = logging.getLogger(__name__)
 
 
-def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
+def run(training_inputs, training_outputs, test_inputs, test_outputs):
     esn = WienerHopfEsn(
         in_size=2,
         reservoir_size=90,
@@ -82,25 +79,3 @@ def _generate(training_inputs, training_outputs, test_inputs, test_outputs):
         predicted_outputs,
         mode='generate with manual feedback'
     )
-
-
-def main():
-    """The main entry point."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '-v',
-        '--verbose',
-        dest='verbosity',
-        action='count',
-        default=0,
-        help='Increase the log level with each use'
-    )
-    args = parser.parse_args()
-
-    setup_logging(args.verbosity)
-
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
-
-    data = load_data()
-    _generate(*data)
