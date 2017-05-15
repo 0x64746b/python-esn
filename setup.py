@@ -30,6 +30,7 @@ setuptools.setup(
     ],
     extras_require={
         'examples': [
+            'hyperopt>=0.1',
             'matplotlib>=2.0.0',
             'scikit-learn>=0.18.1',
         ]

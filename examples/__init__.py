@@ -83,10 +83,22 @@ def dispatch_examples():
     )
     sine_examples.required = True
 
+    sine_simple = sine_examples.add_parser(
+        'simple',
+        help=sine.simple.__doc__
+    )
+    sine_simple.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyperparameters of the example instead of running it'
+    )
+
     sine_examples.add_parser(
         'predict',
         help=sine.predict.__doc__
     )
+
     sine_generate = sine_examples.add_parser(
         'generate',
         help=sine.generate_with_structural_feedback.__doc__
@@ -97,10 +109,19 @@ def dispatch_examples():
         action='store_true',
         help=sine.generate_with_manual_feedback.__doc__
     )
+    sine_generate.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyperparameters of the example instead of running it'
+    )
 
     args = parser.parse_args()
 
     setup_logging(args.verbosity)
+
+    # explicitly seed PRNG for comparable runs
+    np.random.seed(48)
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
@@ -111,16 +132,18 @@ def dispatch_examples():
 
     if args.example == 'generate':
         if not args.with_manual_feedback:
-            example = example_group.generate_with_structural_feedback
+            example = example_group.StructuralFeedbackGenerator(*data)
         else:
-            example = example_group.generate_with_manual_feedback
+            example = example_group.ManualFeedbackGenerator(*data)
     elif args.example == 'predict':
-        example = example_group.predict
+        example = example_group.Predictor(*data)
+    elif args.example == 'simple':
+        example = example_group.UnparametrizedGenerator()
 
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
-
-    example.run(*data)
+    if 'optimize' in args and args.optimize:
+        example.optimize(args.optimize)
+    else:
+        example.run()
 
 
 def setup_logging(verbosity):
