@@ -12,9 +12,10 @@ from __future__ import (
 import logging
 
 import numpy as np
+import pandas as pd
 
 from esn import Esn
-from esn.examples.mackey_glass import plot_results
+from esn.examples import plot_results
 
 
 logger = logging.getLogger(__name__)
@@ -49,10 +50,15 @@ class Example(object):
             )
 
         plot_results(
-            self.test_outputs,
-            predicted_outputs,
+            data=pd.DataFrame({
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs.flatten(),
+            }),
             mode='generate with structural feedback',
-            tracked_activations=self.esn.tracked_units,
+            debug={
+                'training_activations': self.esn.tracked_units,
+                'w_out': self.esn.W_out,
+            },
         )
 
     def _train(self):
@@ -78,4 +84,4 @@ class Example(object):
             for input_date in self.test_inputs
         ]
 
-        return predicted_outputs
+        return np.array(predicted_outputs)

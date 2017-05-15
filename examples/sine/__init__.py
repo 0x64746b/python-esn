@@ -10,10 +10,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from matplotlib import pyplot as plt, ticker
-from matplotlib.offsetbox import AnchoredText
 import numpy as np
-from sklearn.metrics import mean_squared_error
 
 from esn.preprocessing import scale
 
@@ -23,74 +20,6 @@ SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
-
-
-def plot_results(
-        frequencies,
-        correct_outputs,
-        predicted_outputs,
-        mode,
-        debug=None,
-):
-    if not debug:
-        fig, data = plt.subplots()
-    elif 'test_activations' in debug:
-        fig, (data, extra, training_activations) = plt.subplots(nrows=3)
-    else:
-        fig, (data, training_activations, extra) = plt.subplots(nrows=3)
-
-    data.set_title('Mode: {}'.format(mode))
-
-    data.plot(
-        frequencies,
-        color='r',
-        label='Input frequency'
-    )
-    data.plot(correct_outputs, label='Correct outputs')
-    data.plot(predicted_outputs, label='Predicted outputs')
-
-    data.xaxis.set_major_locator(
-        ticker.MultipleLocator(SAMPLES_PER_PERIOD)
-    )
-    data.legend()
-
-    try:
-        rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
-    except ValueError as error:
-        rmse = error.message
-    finally:
-        data.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
-
-    if debug:
-        training_activations.set_title(
-            'Activations of most influential units during training'
-        )
-        training_activations.plot(
-            np.array(list(debug['training_activations'].values())).T
-        )
-        training_activations.legend(
-            [
-                'Unit {} (weights: {})'.format(unit, debug['w_out'][:, unit])
-                for unit in debug['training_activations']
-            ]
-        )
-
-        if 'test_activations' in debug:
-            extra.set_title('Activations during prediction')
-            extra.plot(np.array(list(debug['test_activations'].values())).T)
-            extra.legend(
-                ['Unit {}'.format(unit) for unit in debug['test_activations']]
-            )
-        else:
-            extra.set_title('Output weights')
-            extra.plot(debug['w_out'].T)
-            extra.legend([
-                'Unit {}'.format(unit)
-                for unit in range(debug['w_out'].shape[0])
-            ])
-
-    plt.tight_layout()
-    plt.show()
 
 
 def generate_signal(

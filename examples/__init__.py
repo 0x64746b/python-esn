@@ -12,13 +12,16 @@ from __future__ import (
 import argparse
 import logging
 
+from matplotlib import pyplot as plt, ticker
+from matplotlib.offsetbox import AnchoredText
 import numpy as np
-
-from esn.examples import mackey_glass, sine
+from sklearn.metrics import mean_squared_error
 
 
 def dispatch_examples():
     """The main entry point."""
+    from esn.examples import mackey_glass, sine
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '-v',
@@ -150,3 +153,64 @@ def setup_logging(verbosity):
     logging.basicConfig(
         level=max(logging.DEBUG, logging.WARNING - verbosity * 10)
     )
+
+
+def plot_results(data, mode, debug=None, periodicity=None):
+    plt.style.use('ggplot')
+
+    if not debug:
+        fig, main = plt.subplots()
+    elif 'test_activations' in debug:
+        fig, (main, extra, training_activations) = plt.subplots(nrows=3)
+    else:
+        fig, (main, training_activations, extra) = plt.subplots(nrows=3)
+
+    main.set_title('Mode: {}'.format(mode))
+    data.plot(ax=main)
+    if periodicity:
+        main.xaxis.set_major_locator(ticker.MultipleLocator(periodicity))
+
+    try:
+        rmse = np.sqrt(mean_squared_error(
+            data['correct outputs'],
+            data['predicted outputs']
+        ))
+    except ValueError as error:
+        rmse = error
+    finally:
+        main.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
+
+    if debug:
+        training_activations.set_title(
+            'Activations of most influential units during training'
+        )
+        training_activations.plot(
+            np.array(list(debug['training_activations'].values())).T
+        )
+        training_activations.legend(
+            [
+                'Unit {} (weights: {})'.format(unit, debug['w_out'][:, unit])
+                for unit in debug['training_activations']
+            ]
+        )
+
+        if 'test_activations' in debug:
+            extra.set_title('Activations during prediction')
+            extra.plot(np.array(list(debug['test_activations'].values())).T)
+            extra.legend(
+                ['Unit {}'.format(unit) for unit in debug['test_activations']]
+            )
+            if periodicity:
+                extra.xaxis.set_major_locator(ticker.MultipleLocator(
+                    periodicity
+                ))
+        else:
+            extra.set_title('Output weights')
+            extra.plot(debug['w_out'].T)
+            extra.legend([
+                'Unit {}'.format(unit)
+                for unit in range(debug['w_out'].shape[0])
+            ])
+
+    plt.tight_layout()
+    plt.show()

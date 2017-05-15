@@ -14,12 +14,14 @@ import pickle
 
 import hyperopt
 import numpy as np
+import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
 from esn import Esn
 from esn.activation_functions import lecun, lecun_inv
-from esn.examples.sine import plot_results
+from esn.examples import plot_results
+from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 logger = logging.getLogger(__name__)
@@ -70,15 +72,18 @@ class Example(object):
             )
 
         plot_results(
-            self.test_inputs,
-            self.test_outputs,
-            predicted_outputs,
+            data=pd.DataFrame({
+                'frequencies': self.test_inputs.flatten(),
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs,
+            }),
             mode='generate with structural feedback',
             debug={
                 'training_activations': self.esn.tracked_units,
                 'test_activations': self.test_activations,
                 'w_out': self.esn.W_out,
             },
+            periodicity=SAMPLES_PER_PERIOD,
         )
 
     def optimize(self, exp_key):
@@ -181,4 +186,4 @@ class Example(object):
             np.array(S)
         )
 
-        return predicted_outputs
+        return np.array(predicted_outputs)
