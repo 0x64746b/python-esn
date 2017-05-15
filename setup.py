@@ -21,7 +21,7 @@ setuptools.setup(
 
     keywords='ESN',
 
-    packages=['esn', 'esn.examples'],
+    packages=['esn', 'esn.examples', 'esn.examples.sine', 'esn.examples.mackey_glass'],
     package_dir={'esn.examples': 'examples'},
 
     install_requires=[
@@ -37,8 +37,7 @@ setuptools.setup(
 
     entry_points={
         'console_scripts': [
-            'esn_sine = esn.examples.sine:main',
-            'esn_mackey_glass = esn.examples.mackey_glass:main',
+            'esn_examples = esn.examples:dispatch_examples',
         ],
     }
 )
