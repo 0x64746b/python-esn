@@ -17,13 +17,15 @@ import pickle
 
 import hyperopt
 import numpy as np
+import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
 from esn import WienerHopfEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
-from esn.examples.sine import plot_results
+from esn.examples import plot_results
+from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 INPUT_NOISE_FACTOR = 0.03
@@ -59,6 +61,7 @@ class Example(object):
             ridge_regression=0.001,
             bias_scale=0.1,
             frequency_scale=1.2,
+            num_tracked_units=3,
         )
 
         # debug
@@ -72,10 +75,18 @@ class Example(object):
             )
 
         plot_results(
-            self.test_inputs[:, 0],
-            self.test_outputs,
-            predicted_outputs,
-            mode='generate with manual feedback'
+            data=pd.DataFrame({
+                'frequencies': self.test_inputs[:, 0],
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs,
+            }),
+            mode='generate with manual feedback',
+            debug={
+                'training_activations': self.esn.tracked_units,
+                'test_activations': self.test_activations,
+                'w_out': self.esn.W_out,
+            },
+            periodicity=SAMPLES_PER_PERIOD,
         )
 
     def optimize(self, exp_key):
@@ -132,7 +143,8 @@ class Example(object):
             ridge_regression,
             bias_scale=1.0,
             frequency_scale=1.0,
-            signal_scale=1.0
+            signal_scale=1.0,
+            num_tracked_units=0,
     ):
         self.esn = WienerHopfEsn(
             in_size=2,
@@ -146,6 +158,7 @@ class Example(object):
             squared_network_state=True,
             activation_function=lecun,
         )
+        self.esn.num_tracked_units = num_tracked_units
 
         # scale input weights
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
@@ -154,9 +167,27 @@ class Example(object):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
+        S = [np.hstack((
+            self.esn.BIAS,
+            self.test_inputs[0],
+            self.esn.x,
+            self.test_inputs[0]**2,
+            self.esn.x**2))
+        ]
         predicted_outputs = [self.esn.predict(self.test_inputs[0])[0]]
         for i in range(1, len(self.test_inputs)):
             next_input = np.array([self.test_inputs[i][0], predicted_outputs[i - 1]])
             predicted_outputs.append(self.esn.predict(next_input)[0])
+            S.append(np.hstack((
+                self.esn.BIAS,
+                self.test_inputs[i],
+                self.esn.x,
+                self.test_inputs[i]**2,
+                self.esn.x**2))
+            )
+
+        self.test_activations = self.esn.track_most_influential_units(
+            np.array(S)
+        )
 
         return predicted_outputs

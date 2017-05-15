@@ -10,10 +10,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from matplotlib import pyplot as plt, ticker
-from matplotlib.offsetbox import AnchoredText
 import numpy as np
-from sklearn.metrics import mean_squared_error
 
 from esn.preprocessing import scale
 
@@ -23,27 +20,6 @@ SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
 NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
 MAX_FREQUENCY = 5
-
-
-def plot_results(frequencies, correct_outputs, predicted_outputs, mode):
-    try:
-        rmse = np.sqrt(mean_squared_error(correct_outputs, predicted_outputs))
-    except ValueError as error:
-        rmse = error
-    plt.plot(
-        frequencies,
-        color='r',
-        label='Input frequency'
-    )
-    plt.plot(correct_outputs, label='Correct outputs')
-    plt.plot(predicted_outputs, label='Predicted outputs')
-    plt.gca().xaxis.set_major_locator(
-        ticker.MultipleLocator(SAMPLES_PER_PERIOD)
-    )
-    plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
-    plt.title('Mode: {}'.format(mode))
-    plt.legend()
-    plt.show()
 
 
 def generate_signal(

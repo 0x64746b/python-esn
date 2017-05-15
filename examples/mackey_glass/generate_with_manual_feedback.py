@@ -14,8 +14,11 @@ from __future__ import (
 
 import logging
 
+import numpy as np
+import pandas as pd
+
 from esn import Esn
-from esn.examples.mackey_glass import plot_results
+from esn.examples import plot_results
 
 
 logger = logging.getLogger(__name__)
@@ -48,9 +51,15 @@ class Example(object):
             )
 
         plot_results(
-            self.test_outputs,
-            predicted_outputs,
-            mode='generate with manual feedback'
+            data=pd.DataFrame({
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs.flatten(),
+            }),
+            mode='generate with manual feedback',
+            debug={
+                'training_activations': self.esn.tracked_units,
+                'w_out': self.esn.W_out,
+            },
         )
 
     def _train(self):
@@ -64,6 +73,7 @@ class Example(object):
             initial_transients=100,
             state_noise=1e-10,
         )
+        self.esn.num_tracked_units = 2
 
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)
@@ -73,4 +83,4 @@ class Example(object):
         for i in range(len(self.test_inputs) - 1):
             predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
-        return predicted_outputs
+        return np.array(predicted_outputs)

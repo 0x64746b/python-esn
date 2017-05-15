@@ -12,8 +12,11 @@ from __future__ import (
 
 import logging
 
+import numpy as np
+import pandas as pd
+
 from esn import WienerHopfEsn
-from esn.examples.mackey_glass import plot_results
+from esn.examples import plot_results
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +48,13 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(self.test_outputs, predicted_outputs, mode='predict')
+        plot_results(
+            data=pd.DataFrame({
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs.flatten(),
+            }),
+            mode='predict'
+        )
 
     def _train(self):
 
@@ -62,5 +71,8 @@ class Example(object):
 
         self.esn.fit(self.training_inputs, self.training_outputs)
 
-        return [self.esn.predict(input_date) for input_date in self.test_inputs]
+        return np.array([
+            self.esn.predict(input_date)
+            for input_date in self.test_inputs
+        ])
 

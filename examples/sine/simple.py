@@ -15,11 +15,12 @@ import pickle
 
 import hyperopt
 import numpy as np
+import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
 from esn import Esn
-from esn.examples.sine import plot_results
+from esn.examples import plot_results
 from esn.preprocessing import add_noise, scale
 
 
@@ -77,9 +78,10 @@ class Example(object):
             )
 
         plot_results(
-            [],
-            self.test_outputs,
-            predicted_outputs,
+            data=pd.DataFrame({
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs.flatten(),
+            }),
             mode='generate simple signal'
         )
 
@@ -116,7 +118,7 @@ class Example(object):
         for i in range(len(self.test_inputs)-1):
             predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
-        return predicted_outputs
+        return np.array(predicted_outputs)
 
     def optimize(self, exp_key):
         def objective(hyper_parameters):

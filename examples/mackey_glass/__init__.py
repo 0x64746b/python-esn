@@ -22,20 +22,6 @@ NUM_TRAINING_SAMPLES = 2000
 NUM_PREDICTION_SAMPLES = 1000
 
 
-def plot_results(reference, predicted, mode):
-    try:
-        rmse = np.sqrt(mean_squared_error(reference, predicted))
-    except ValueError as error:
-        rmse = error
-
-    plt.plot(reference, label='Reference')
-    plt.plot(predicted, label='Predicted')
-    plt.gca().add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
-    plt.gca().set_title('Mode: {}'.format(mode))
-    plt.legend()
-    plt.show()
-
-
 def load_data(file_name):
     data = np.loadtxt(file_name)
 

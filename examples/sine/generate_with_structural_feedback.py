@@ -14,12 +14,14 @@ import pickle
 
 import hyperopt
 import numpy as np
+import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
 from esn import Esn
 from esn.activation_functions import lecun, lecun_inv
-from esn.examples.sine import plot_results
+from esn.examples import plot_results
+from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,7 @@ class Example(object):
             spectral_radius=0.25,
             leaking_rate=0.1,
             state_noise=0.007,
+            num_tracked_units=3,
         )
 
         # debug
@@ -69,10 +72,18 @@ class Example(object):
             )
 
         plot_results(
-            self.test_inputs,
-            self.test_outputs,
-            predicted_outputs,
-            mode='generate with structural feedback'
+            data=pd.DataFrame({
+                'frequencies': self.test_inputs.flatten(),
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs,
+            }),
+            mode='generate with structural feedback',
+            debug={
+                'training_activations': self.esn.tracked_units,
+                'test_activations': self.test_activations,
+                'w_out': self.esn.W_out,
+            },
+            periodicity=SAMPLES_PER_PERIOD,
         )
 
     def optimize(self, exp_key):
@@ -128,6 +139,7 @@ class Example(object):
             state_noise,
             bias_scale=1.0,
             frequency_scale=1.0,
+            num_tracked_units=0,
     ):
         self.esn = Esn(
             in_size=1,
@@ -143,6 +155,7 @@ class Example(object):
             output_activation_function=(lecun, lecun_inv),
             output_feedback=True,
         )
+        self.esn.num_tracked_units = num_tracked_units
 
         # scale input weights
         self.esn.W_in *= [bias_scale, frequency_scale]
@@ -151,8 +164,26 @@ class Example(object):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
+        S = [np.hstack((
+            self.esn.BIAS,
+            self.test_inputs[0],
+            self.esn.x,
+            self.test_inputs[0]**2,
+            self.esn.x**2))
+        ]
         predicted_outputs = [self.esn.predict(self.test_inputs[0])[0]]
         for i in range(1, len(self.test_inputs)):
             predicted_outputs.append(self.esn.predict(self.test_inputs[i]))
+            S.append(np.hstack((
+                self.esn.BIAS,
+                self.test_inputs[i],
+                self.esn.x,
+                self.test_inputs[i]**2,
+                self.esn.x**2))
+            )
 
-        return predicted_outputs
+        self.test_activations = self.esn.track_most_influential_units(
+            np.array(S)
+        )
+
+        return np.array(predicted_outputs)

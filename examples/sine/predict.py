@@ -12,10 +12,12 @@ from __future__ import (
 import logging
 
 import numpy as np
+import pandas as pd
 
 from esn import WienerHopfEsn
 from esn.activation_functions import lecun
-from esn.examples.sine import plot_results
+from esn.examples import plot_results
+from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 logger = logging.getLogger(__name__)
@@ -53,10 +55,13 @@ class Example(object):
             )
 
         plot_results(
-            self.test_inputs[:, 0],
-            self.test_outputs,
-            predicted_outputs,
-            mode='predict'
+            data=pd.DataFrame({
+                'frequencies': self.test_inputs[:, 0],
+                'correct outputs': self.test_outputs,
+                'predicted outputs': predicted_outputs.flatten(),
+            }),
+            mode='predict',
+            periodicity=SAMPLES_PER_PERIOD,
         )
 
     def _train(self):
@@ -76,4 +81,7 @@ class Example(object):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
-        return [self.esn.predict(input_date) for input_date in self.test_inputs]
+        return np.array([
+            self.esn.predict(input_date)
+            for input_date in self.test_inputs
+        ])
