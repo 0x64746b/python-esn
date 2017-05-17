@@ -20,6 +20,7 @@ import scipy
 from sklearn.metrics import mean_squared_error
 
 from esn import LmsEsn
+from esn.activation_functions import lecun
 from esn.examples import plot_results
 from esn.preprocessing import add_noise, scale
 
@@ -46,8 +47,13 @@ class Example(object):
         signal = scale(
             np.sin(sampling_points)
             + np.sin(2 * sampling_points)
+            + np.sin(3.3 * sampling_points)
             + np.sin(4 * sampling_points)
+            + np.cos(2.2 * sampling_points)
+            + np.cos(4 * sampling_points)
+            + np.cos(5 * sampling_points)
         ).reshape(num_sampling_points, 1)
+
 
         self.training_inputs = signal[:training_length]
         self.training_outputs = signal[1:training_length + 1]
@@ -98,7 +104,7 @@ class Example(object):
     ):
         self.esn = LmsEsn(
             in_size=1,
-            reservoir_size=400,
+            reservoir_size=3000,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
@@ -107,6 +113,7 @@ class Example(object):
             sparsity=0.95,
             initial_transients=300,
             squared_network_state=True,
+            activation_function=lecun,
         )
         self.esn.W_in *= [bias_scale, signal_scale]
 
