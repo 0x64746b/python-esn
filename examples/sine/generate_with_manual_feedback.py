@@ -13,15 +13,15 @@ from __future__ import (
 )
 
 import logging
-import pickle
 
 import hyperopt
+import hyperopt.mongoexp
 import numpy as np
 import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import WienerHopfEsn
+from esn import LmsEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
 from esn.examples import plot_results
@@ -58,7 +58,7 @@ class Example(object):
         predicted_outputs = self._train(
             spectral_radius=0.25,
             leaking_rate=0.1,
-            ridge_regression=0.001,
+            learning_rate=0.001,
             bias_scale=0.1,
             frequency_scale=1.2,
             num_tracked_units=3,
@@ -90,49 +90,27 @@ class Example(object):
         )
 
     def optimize(self, exp_key):
-        def objective(hyper_parameters):
-            # re-seed for repeatable results
-            np.random.seed(48)
-
-            try:
-                predicted_outputs = self._train(*hyper_parameters)
-            except scipy.sparse.linalg.ArpackNoConvergence:
-                return {'status': hyperopt.STATUS_FAIL}
-            else:
-                try:
-                    rmse = np.sqrt(mean_squared_error(
-                        self.test_outputs,
-                        predicted_outputs
-                    ))
-                except ValueError:
-                    return {'status': hyperopt.STATUS_FAIL}
-                else:
-                    return {'status': hyperopt.STATUS_OK, 'loss': rmse}
-
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.quniform('ridge_regression', 0.0001, 0.1, 0.0001),
-            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
-            hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.1),
+            hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
+            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
+            hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
 
-        trials = hyperopt.Trials(exp_key=exp_key)
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
 
         best = hyperopt.fmin(
-            objective,
+            self._objective,
             space=search_space,
             algo=hyperopt.tpe.suggest,
             max_evals=150,
             trials=trials,
         )
-
-        with open('{}_trials.pickle'.format(exp_key), 'wb') as trials_file:
-            pickle.dump(trials, trials_file)
-
-        with open('{}_best.pickle'.format(exp_key), 'wb') as result_file:
-            pickle.dump(best, result_file)
 
         logger.info('Best parameter combination: %s', best)
 
@@ -140,21 +118,21 @@ class Example(object):
             self,
             spectral_radius,
             leaking_rate,
-            ridge_regression,
+            learning_rate,
             bias_scale=1.0,
             frequency_scale=1.0,
             signal_scale=1.0,
             num_tracked_units=0,
     ):
-        self.esn = WienerHopfEsn(
+        self.esn = LmsEsn(
             in_size=2,
             reservoir_size=200,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
+            learning_rate=learning_rate,
             sparsity=0.95,
             initial_transients=1000,
-            ridge_regression=ridge_regression,
             squared_network_state=True,
             activation_function=lecun,
         )
@@ -191,3 +169,22 @@ class Example(object):
         )
 
         return predicted_outputs
+
+    def _objective(self, hyper_parameters):
+        # re-seed for repeatable results
+        np.random.seed(48)
+
+        try:
+            predicted_outputs = self._train(*hyper_parameters)
+        except scipy.sparse.linalg.ArpackNoConvergence:
+            return {'status': hyperopt.STATUS_FAIL}
+        else:
+            try:
+                rmse = np.sqrt(mean_squared_error(
+                    self.test_outputs,
+                    predicted_outputs
+                ))
+            except ValueError:
+                return {'status': hyperopt.STATUS_FAIL}
+            else:
+                return {'status': hyperopt.STATUS_OK, 'loss': rmse}
