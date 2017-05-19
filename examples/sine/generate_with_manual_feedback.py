@@ -164,9 +164,10 @@ class Example(object):
                 self.esn.x**2))
             )
 
-        self.test_activations = self.esn.track_most_influential_units(
-            np.array(S)
-        )
+        if num_tracked_units:
+            self.test_activations = self.esn.track_most_influential_units(
+                np.array(S)
+            )
 
         return predicted_outputs
 
