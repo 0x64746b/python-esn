@@ -11,15 +11,16 @@ from __future__ import (
 )
 
 import logging
-import pickle
 
 import hyperopt
+import hyperopt.mongoexp
 import numpy as np
 import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import Esn
+from esn import LmsEsn
+from esn.activation_functions import lecun
 from esn.examples import plot_results
 from esn.preprocessing import add_noise, scale
 
@@ -46,8 +47,13 @@ class Example(object):
         signal = scale(
             np.sin(sampling_points)
             + np.sin(2 * sampling_points)
+            + np.sin(3.3 * sampling_points)
             + np.sin(4 * sampling_points)
+            + np.cos(2.2 * sampling_points)
+            + np.cos(4 * sampling_points)
+            + np.cos(5 * sampling_points)
         ).reshape(num_sampling_points, 1)
+
 
         self.training_inputs = signal[:training_length]
         self.training_outputs = signal[1:training_length + 1]
@@ -60,12 +66,13 @@ class Example(object):
 
     def run(self):
         predicted_outputs = self._train(
-            spectral_radius=0.99,
-            leaking_rate=0.33,
-            bias_scale=0.2,
-            signal_scale=0.2,
-            state_noise=1e-7,
-            input_noise=1e-7,
+            spectral_radius=1.11,
+            leaking_rate=0.75,
+            learning_rate=0.00002,
+            bias_scale=-0.4,
+            signal_scale=1.2,
+            state_noise=0.004,
+            input_noise=0.007,
         )
 
         # debug
@@ -89,21 +96,24 @@ class Example(object):
             self,
             spectral_radius,
             leaking_rate,
+            learning_rate,
             bias_scale,
             signal_scale,
             state_noise,
             input_noise,
     ):
-        self.esn = Esn(
+        self.esn = LmsEsn(
             in_size=1,
-            reservoir_size=200,
+            reservoir_size=3000,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
+            learning_rate=learning_rate,
             state_noise=state_noise,
             sparsity=0.95,
             initial_transients=300,
             squared_network_state=True,
+            activation_function=lecun,
         )
         self.esn.W_in *= [bias_scale, signal_scale]
 
@@ -121,48 +131,46 @@ class Example(object):
         return np.array(predicted_outputs)
 
     def optimize(self, exp_key):
-        def objective(hyper_parameters):
-            # re-seed for repeatable results
-            np.random.seed(48)
-
-            try:
-                predicted_outputs = self._train(*hyper_parameters)
-            except scipy.sparse.linalg.ArpackNoConvergence:
-                return {'status': hyperopt.STATUS_FAIL}
-            else:
-                try:
-                    rmse = np.sqrt(mean_squared_error(
-                        self.test_outputs,
-                        predicted_outputs
-                    ))
-                except ValueError:
-                    return {'status': hyperopt.STATUS_FAIL}
-                else:
-                    return {'status': hyperopt.STATUS_OK, 'loss': rmse}
-
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
             hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
             hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
         )
 
-        trials = hyperopt.Trials(exp_key=exp_key)
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
 
         best = hyperopt.fmin(
-            objective,
+            self._objective,
             space=search_space,
             algo=hyperopt.tpe.suggest,
             max_evals=150,
             trials=trials,
         )
 
-        with open('{}_trials.pickle'.format(exp_key), 'wb') as trials_file:
-            pickle.dump(trials, trials_file)
-
-        with open('{}_best.pickle'.format(exp_key), 'wb') as result_file:
-            pickle.dump(best, result_file)
-
         logger.info('Best parameter combination: %s', best)
+
+    def _objective(self, hyper_parameters):
+        # re-seed for repeatable results
+        np.random.seed(48)
+
+        try:
+            predicted_outputs = self._train(*hyper_parameters)
+        except scipy.sparse.linalg.ArpackNoConvergence:
+            return {'status': hyperopt.STATUS_FAIL}
+        else:
+            try:
+                rmse = np.sqrt(mean_squared_error(
+                    self.test_outputs,
+                    predicted_outputs
+                ))
+            except ValueError:
+                return {'status': hyperopt.STATUS_FAIL}
+            else:
+                return {'status': hyperopt.STATUS_OK, 'loss': rmse}

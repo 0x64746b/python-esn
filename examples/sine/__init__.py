@@ -15,10 +15,10 @@ import numpy as np
 from esn.preprocessing import scale
 
 
-SIGNAL_LENGTH = 15000
+FREQUENCY_PERIOD_AVG_LENGTH = 200
+SIGNAL_LENGTH = 75000
 SAMPLES_PER_PERIOD = 300  # without endpoint
-NUM_TRAINING_SAMPLES = int(SIGNAL_LENGTH * 0.7)
-NUM_FREQUENCY_CHANGES = int(SIGNAL_LENGTH / 200)
+NUM_TRAINING_SAMPLES = SIGNAL_LENGTH - 4500
 MAX_FREQUENCY = 5
 
 
@@ -58,7 +58,7 @@ def load_data():
     frequencies, signal = generate_signal(
         SIGNAL_LENGTH,
         SAMPLES_PER_PERIOD,
-        NUM_FREQUENCY_CHANGES,
+        int(SIGNAL_LENGTH / FREQUENCY_PERIOD_AVG_LENGTH),
         MAX_FREQUENCY,
     )
 

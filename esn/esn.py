@@ -8,6 +8,7 @@ from __future__ import (
 )
 
 import numpy as np
+import padasip as pa
 from scipy import sparse
 from scipy.sparse import linalg
 
@@ -17,7 +18,7 @@ from .preprocessing import add_noise
 
 class Esn(object):
     """
-    Model an Echo State Network
+    Model an Echo State Network.
 
     Use the pseudoinverse of the extended reservoir states to compute the output
     weights.
@@ -79,7 +80,7 @@ class Esn(object):
             self.W_fb = np.zeros((self.N, self.L))
 
         # amount of noise added when forcing teacher outputs
-        self.mu = teacher_noise
+        self.tau = teacher_noise
 
         # leaking rate
         self.alpha = leaking_rate
@@ -124,7 +125,7 @@ class Esn(object):
 
     def fit(self, input_data, output_data):
         u = self._prepend_bias(input_data, sequence=True)
-        y = add_noise(output_data, self.mu)
+        y = add_noise(output_data, self.tau)
 
         S = self._harvest_reservoir_states(u, y)
 
@@ -228,7 +229,7 @@ class Esn(object):
 
 class WienerHopfEsn(Esn):
     """
-    Model an Echo State Network
+    Model an Echo State Network.
 
     Invoke the Wiener-Hopf solution to compute the output weights.
     """
@@ -252,3 +253,57 @@ class WienerHopfEsn(Esn):
             ),
             P
         ).T
+
+
+class LmsEsn(Esn):
+    """
+    Model an Echo State Network.
+
+    Update the output weights online through an adaptive LMS filter.
+    """
+
+    def __init__(self, learning_rate=pa.consts.MU_LMS, *args, **kwargs):
+        super(LmsEsn, self).__init__(*args, **kwargs)
+
+        # learning rate for the filter
+        self.mu = learning_rate
+
+    def fit(self, input_data, output_data):
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.tau)
+
+        state_size = self.BIAS.size + self.K + self.N
+        if self.nonlinear_augmentation:
+            state_size += self.K + self.N
+
+        n_max = len(u)
+
+        # TODO: one per output neuron?
+        lms = pa.filters.FilterLMS(
+            state_size,  # TODO: Think about output feedback
+            mu=self.mu,
+            w=str('zeros'),
+        )
+
+        if self.num_tracked_units:
+            tracked_states = np.zeros((n_max, state_size))
+
+        for n in range(n_max):
+            self.x = self._update_state(u[n], self.x, self.y, self.nu)
+            self.y = y_teach[n]
+
+            if n > self.washout:
+                v = np.hstack((u[n], self.x))
+                if self.nonlinear_augmentation:
+                    v = np.hstack((v, v[1:]**2))
+
+                # y = rls.predict(v)
+                lms.adapt(self.g_inv(y_teach[n]), v)
+
+                if self.num_tracked_units:
+                    tracked_states[n] = v
+
+        self.W_out = lms.w.reshape((self.L, state_size))  # TODO: Think about multiple outputs
+
+        if self.num_tracked_units:
+            self.tracked_units = self.track_most_influential_units(tracked_states[self.washout:])
