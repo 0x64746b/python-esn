@@ -268,42 +268,69 @@ class LmsEsn(Esn):
         # learning rate for the filter
         self.mu = learning_rate
 
-    def fit(self, input_data, output_data):
-        u = self._prepend_bias(input_data, sequence=True)
-        y_teach = add_noise(output_data, self.tau)
+        # the adaptive filter is initialized by each call to `fit()`
+        self._filter = None
 
+        # the number of presented inputs across calls to `partial_fit()`.
+        # used to track the initial transient
+        self._num_seen_inputs = None
+
+        # a container to track extended states across calls to `partial_fit()`
+        self._tracked_states = None
+
+    @property
+    def _state_size(self):
         state_size = self.BIAS.size + self.K + self.N
+
         if self.nonlinear_augmentation:
             state_size += self.K + self.N
 
-        n_max = len(u)
+        return state_size
 
-        # TODO: one per output neuron?
-        lms = pa.filters.FilterLMS(
-            state_size,  # TODO: Think about output feedback
+    def fit(self, input_data, output_data):
+        self._num_seen_inputs = 0
+
+        # TODO: extend filter class to allow for weight matrices
+        self._filter = pa.filters.FilterLMS(
+            self._state_size,
             mu=self.mu,
             w=str('zeros'),
         )
 
         if self.num_tracked_units:
-            tracked_states = np.zeros((n_max, state_size))
+            self._tracked_states = []
+
+        self.partial_fit(input_data, output_data)
+
+    def partial_fit(self, input_data, output_data):
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.tau)
+
+        n_max = len(u)
 
         for n in range(n_max):
+            self._num_seen_inputs += 1
+
             self.x = self._update_state(u[n], self.x, self.y, self.nu)
             self.y = y_teach[n]
 
-            if n > self.washout:
+            if self._num_seen_inputs > self.washout:
                 v = np.hstack((u[n], self.x))
                 if self.nonlinear_augmentation:
                     v = np.hstack((v, v[1:]**2))
 
-                # y = rls.predict(v)
-                lms.adapt(self.g_inv(y_teach[n]), v)
+                self._filter.adapt(self.g_inv(y_teach[n]), v)
 
                 if self.num_tracked_units:
-                    tracked_states[n] = v
+                    self._tracked_states.append(v)
 
-        self.W_out = lms.w.reshape((self.L, state_size))  # TODO: Think about multiple outputs
+        # FIXME: weight matrices in the filter will enable a simple `.T`
+        self.W_out = self._filter.w.reshape((
+            self.L,
+            self._state_size
+        ))
 
         if self.num_tracked_units:
-            self.tracked_units = self.track_most_influential_units(tracked_states[self.washout:])
+            self.tracked_units = self.track_most_influential_units(
+                self._tracked_states
+            )
