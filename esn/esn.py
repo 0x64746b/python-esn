@@ -276,7 +276,7 @@ class LmsEsn(Esn):
         self._num_seen_inputs = None
 
         # a container to track extended states across calls to `partial_fit()`
-        self._tracked_states = None
+        self.tracked_states = None
 
     @property
     def _state_size(self):
@@ -298,7 +298,7 @@ class LmsEsn(Esn):
         )
 
         if self.num_tracked_units:
-            self._tracked_states = []
+            self.tracked_states = []
 
         self.partial_fit(input_data, output_data)
 
@@ -322,15 +322,10 @@ class LmsEsn(Esn):
                 self._filter.adapt(self.g_inv(y_teach[n]), v)
 
                 if self.num_tracked_units:
-                    self._tracked_states.append(v)
+                    self.tracked_states.append(v)
 
         # FIXME: weight matrices in the filter will enable a simple `.T`
         self.W_out = self._filter.w.reshape((
             self.L,
             self._state_size
         ))
-
-        if self.num_tracked_units and self._tracked_states:
-            self.tracked_units = self.track_most_influential_units(
-                np.array(self._tracked_states)
-            )
