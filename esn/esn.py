@@ -330,7 +330,7 @@ class LmsEsn(Esn):
             self._state_size
         ))
 
-        if self.num_tracked_units:
+        if self.num_tracked_units and self._tracked_states:
             self.tracked_units = self.track_most_influential_units(
-                self._tracked_states
+                np.array(self._tracked_states)
             )
