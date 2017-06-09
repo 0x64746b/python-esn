@@ -26,12 +26,14 @@ setuptools.setup(
 
     install_requires=[
         'numpy>=1.12.0',
+        'padasip==1.0.0',
         'scipy>=0.18.1',
     ],
     extras_require={
         'examples': [
             'hyperopt>=0.1',
             'matplotlib>=2.0.0',
+            'pandas>=0.20.2',
             'scikit-learn>=0.18.1',
         ]
     },
