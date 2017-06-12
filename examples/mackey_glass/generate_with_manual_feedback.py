@@ -20,7 +20,8 @@ import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import Esn
+from esn import LmsEsn
+from esn.activation_functions import lecun
 from esn.examples import plot_results
 
 
@@ -38,6 +39,10 @@ class Example(object):
     ):
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
+
+        # remove many of the training labels to simulate incomplete data
+        self.training_outputs[1::2] = np.nan
+
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
 
@@ -45,8 +50,10 @@ class Example(object):
         predicted_outputs = self._train(
             spectral_radius=0.66,
             leaking_rate=0.5,
+            learning_rate=1e-5,
             bias_scale=0.53,
             signal_scale=0.9,
+            state_noise=1e-5,
             num_tracked_units=2,
         )
 
@@ -76,19 +83,24 @@ class Example(object):
             self,
             spectral_radius,
             leaking_rate,
-            bias_scale=1.0,
-            signal_scale=1.0,
+            learning_rate,
+            bias_scale,
+            signal_scale,
+            state_noise,
             num_tracked_units=0,
     ):
-        self.esn = Esn(
+        self.esn = LmsEsn(
             in_size=1,
             reservoir_size=1000,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
+            learning_rate=learning_rate,
             sparsity=0.95,
             initial_transients=100,
-            state_noise=1e-10,
+            state_noise=state_noise,
+            squared_network_state=True,
+            activation_function=lecun,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -96,7 +108,22 @@ class Example(object):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
+        )
+        for input_date, output_date in zip(
+                self.training_inputs[1:],
+                self.training_outputs[1:]
+        ):
+            if not np.isnan(output_date.item()):
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
@@ -109,8 +136,10 @@ class Example(object):
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
+            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
         )
 
         trials = hyperopt.mongoexp.MongoTrials(

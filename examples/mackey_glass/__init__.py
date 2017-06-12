@@ -35,7 +35,7 @@ def load_data(file_name):
     training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
         NUM_TRAINING_SAMPLES,
         1  # out_size
-    )
+    ).copy()
 
     # consume training data
     data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
