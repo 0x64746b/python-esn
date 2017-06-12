@@ -10,6 +10,7 @@ from __future__ import (
 )
 
 import argparse
+from datetime import datetime
 import logging
 
 from matplotlib import pyplot as plt, ticker
@@ -73,6 +74,12 @@ def dispatch_examples():
         '--with-manual-feedback',
         action='store_true',
         help=mackey_glass.generate_with_manual_feedback.__doc__
+    )
+    mackey_glass_generate.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyperparameters of the example instead of running it %(default)s'
     )
     mackey_glass_generate.add_argument(
         'data_file',

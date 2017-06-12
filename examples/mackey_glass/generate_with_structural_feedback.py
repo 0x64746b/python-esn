@@ -11,8 +11,11 @@ from __future__ import (
 
 import logging
 
+import hyperopt
 import numpy as np
 import pandas as pd
+import scipy
+from sklearn.metrics import mean_squared_error
 
 from esn import Esn
 from esn.examples import plot_results
@@ -38,7 +41,11 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self):
-        predicted_outputs = self._train()
+        predicted_outputs = self._train(
+            spectral_radius=1.15,
+            leaking_rate=0.84,
+            state_noise=5e-6,
+        )
 
         # debug
         for i, predicted_date in enumerate([self.training_outputs[-1]] + predicted_outputs[:-1]):
@@ -61,16 +68,21 @@ class Example(object):
             },
         )
 
-    def _train(self):
+    def _train(
+            self,
+            spectral_radius,
+            leaking_rate,
+            state_noise,
+    ):
         self.esn = Esn(
             in_size=0,
             reservoir_size=1000,
             out_size=1,
-            spectral_radius=0.75,
-            leaking_rate=0.3,
+            spectral_radius=spectral_radius,
+            leaking_rate=leaking_rate,
             sparsity=0.95,
             initial_transients=100,
-            state_noise=1e-10,
+            state_noise=state_noise,
             output_feedback=True,
         )
         self.esn.num_tracked_units=5
@@ -85,3 +97,44 @@ class Example(object):
         ]
 
         return np.array(predicted_outputs)
+
+    def optimize(self, exp_key):
+        search_space = (
+            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
+        )
+
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
+
+        best = hyperopt.fmin(
+            self._objective,
+            space=search_space,
+            algo=hyperopt.tpe.suggest,
+            max_evals=150,
+            trials=trials,
+        )
+
+        logger.info('Best parameter combination: %s', best)
+
+    def _objective(self, hyper_parameters):
+        # re-seed for repeatable results
+        np.random.seed(48)
+
+        try:
+            predicted_outputs = self._train(*hyper_parameters)
+        except scipy.sparse.linalg.ArpackNoConvergence:
+            return {'status': hyperopt.STATUS_FAIL}
+        else:
+            try:
+                rmse = np.sqrt(mean_squared_error(
+                    self.test_outputs,
+                    predicted_outputs
+                ))
+            except ValueError:
+                return {'status': hyperopt.STATUS_FAIL}
+            else:
+                return {'status': hyperopt.STATUS_OK, 'loss': rmse}
