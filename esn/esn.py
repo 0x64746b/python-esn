@@ -360,6 +360,35 @@ class LmsEsn(Esn):
         ))
 
 
+class RlsEsn(LmsEsn):
+
+    def __init__(
+            self,
+            forgetting_factor=0.99,
+            autocorrelation_init=0.1,
+            *args,
+            **kwargs
+    ):
+        super(RlsEsn, self).__init__(forgetting_factor, *args, **kwargs)
+
+        self.eps = autocorrelation_init
+
+    def fit(self, input_data, output_data):
+        self._num_seen_inputs = 0
+
+        self._filter = pa.filters.FilterRLS(
+            self._state_size,
+            mu=self.mu,
+            eps=self.eps,
+            w=str('zeros'),
+        )
+
+        if self.num_tracked_units:
+            self._tracked_states = []
+
+        self.partial_fit(input_data, output_data)
+
+
 class MlpEsn(Esn):
 
     def __init__(
