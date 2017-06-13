@@ -113,7 +113,6 @@ class Esn(object):
         #  the actual tracked number can be lower if a unit is the most
         #  influential one for multiple outputs.
         self.num_tracked_units = 0
-        self.tracked_units = {}
 
     @classmethod
     def _prepend_bias(cls, input_data, sequence=False):
@@ -276,7 +275,11 @@ class LmsEsn(Esn):
         self._num_seen_inputs = None
 
         # a container to track extended states across calls to `partial_fit()`
-        self.tracked_states = None
+        self._tracked_states = None
+
+    @property
+    def tracked_units(self):
+        return self.track_most_influential_units(np.array(self._tracked_states))
 
     @property
     def _state_size(self):
@@ -298,7 +301,7 @@ class LmsEsn(Esn):
         )
 
         if self.num_tracked_units:
-            self.tracked_states = []
+            self._tracked_states = []
 
         self.partial_fit(input_data, output_data)
 
@@ -322,7 +325,7 @@ class LmsEsn(Esn):
                 self._filter.adapt(self.g_inv(y_teach[n]), v)
 
                 if self.num_tracked_units:
-                    self.tracked_states.append(v)
+                    self._tracked_states.append(v)
 
         # FIXME: weight matrices in the filter will enable a simple `.T`
         self.W_out = self._filter.w.reshape((

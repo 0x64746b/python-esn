@@ -145,11 +145,6 @@ class Example(object):
         # train
         self.esn.fit(self.training_inputs, self.training_outputs)
 
-        if num_tracked_units:
-            self.esn.tracked_units = self.esn.track_most_influential_units(
-                np.array(self.esn.tracked_states)
-            )
-
         # test
         S = [np.hstack((
             self.esn.BIAS,
