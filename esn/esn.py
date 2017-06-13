@@ -287,7 +287,7 @@ class LmsEsn(Esn):
     Update the output weights online through an adaptive LMS filter.
     """
 
-    def __init__(self, learning_rate=pa.consts.MU_LMS, *args, **kwargs):
+    def __init__(self, learning_rate=0.01, *args, **kwargs):
         super(LmsEsn, self).__init__(*args, **kwargs)
 
         # learning rate for the filter
