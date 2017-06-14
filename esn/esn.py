@@ -58,7 +58,7 @@ class Esn(object):
         # - centered around zero
         # - of intermediate size in order to avoid the flat error surfaces
         #   near the origin and far from the origin
-        self.W_in = np.random.rand(self.N, self.BIAS.size + self.K) - 0.5
+        self.W_in = (np.random.rand(self.N, self.BIAS.size + self.K) - 0.5) / 5
 
         # reservoir weight matrix
         self.W = sparse.rand(self.N, self.N, density=1-sparsity, format='csc')
