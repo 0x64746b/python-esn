@@ -48,12 +48,17 @@ class Example(object):
 
     def run(self, output_file):
         predicted_outputs = self._train(
+            reservoir_size=1000,
             spectral_radius=0.66,
             leaking_rate=0.5,
             learning_rate=1e-5,
+            sparsity=0.95,
+            initial_transients=100,
+            state_noise=1e-5,
+            squared_network_state=True,
+            activation_function=lecun,
             bias_scale=0.53,
             signal_scale=0.9,
-            state_noise=1e-5,
             num_tracked_units=2,
         )
 
@@ -81,26 +86,31 @@ class Example(object):
 
     def _train(
             self,
+            reservoir_size,
             spectral_radius,
             leaking_rate,
             learning_rate,
+            sparsity,
+            initial_transients,
+            state_noise,
+            squared_network_state,
+            activation_function,
             bias_scale,
             signal_scale,
-            state_noise,
             num_tracked_units=0,
     ):
         self.esn = LmsEsn(
             in_size=1,
-            reservoir_size=1000,
+            reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
             learning_rate=learning_rate,
-            sparsity=0.95,
-            initial_transients=100,
+            sparsity=sparsity,
+            initial_transients=int(initial_transients),
             state_noise=state_noise,
-            squared_network_state=True,
-            activation_function=lecun,
+            squared_network_state=squared_network_state,
+            activation_function=activation_function,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -134,12 +144,17 @@ class Example(object):
 
     def optimize(self, exp_key):
         search_space = (
-            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('reservoir_size', 1000, 15000, 1000),
+            hyperopt.hp.quniform('spectral_radius', 0, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
             hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
+            hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
+            hyperopt.hp.quniform('initial_transients', 50, 1000, 50),
+            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
+            hyperopt.hp.choice('squared_network_state', [True, False]),
+            hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
         )
 
         trials = hyperopt.mongoexp.MongoTrials(
