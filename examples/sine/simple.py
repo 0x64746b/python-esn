@@ -64,7 +64,7 @@ class Example(object):
         self.test_inputs = signal[:test_length]
         self.test_outputs = signal[1:test_length + 1]
 
-    def run(self):
+    def run(self, output_file):
         predicted_outputs = self._train(
             spectral_radius=1.11,
             leaking_rate=0.75,
@@ -89,7 +89,8 @@ class Example(object):
                 'correct outputs': self.test_outputs,
                 'predicted outputs': predicted_outputs.flatten(),
             }),
-            mode='generate simple signal'
+            mode='generate simple signal',
+            output_file=output_file,
         )
 
     def _train(

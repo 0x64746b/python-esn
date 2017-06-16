@@ -41,7 +41,7 @@ class Example(object):
         self.test_inputs = np.array(list(zip(*test_inputs)))
         self.test_outputs = test_outputs
 
-    def run(self):
+    def run(self, output_file):
         predicted_outputs = self._train()
 
         # debug
@@ -62,6 +62,7 @@ class Example(object):
             }),
             mode='predict',
             periodicity=SAMPLES_PER_PERIOD,
+            output_file=output_file,
         )
 
     def _train(self):

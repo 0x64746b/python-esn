@@ -40,7 +40,7 @@ class Example(object):
         self.training_outputs = training_outputs
         self.test_outputs = test_outputs
 
-    def run(self):
+    def run(self, output_file):
         predicted_outputs = self._train(
             spectral_radius=1.15,
             leaking_rate=0.84,
@@ -66,6 +66,7 @@ class Example(object):
                 'training_activations': self.esn.tracked_units,
                 'w_out': self.esn.W_out,
             },
+            output_file=output_file,
         )
 
     def _train(

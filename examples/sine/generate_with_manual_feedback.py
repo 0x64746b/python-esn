@@ -54,7 +54,7 @@ class Example(object):
         self.test_inputs = np.array(list(zip(*test_inputs)))
         self.test_outputs = test_outputs
 
-    def run(self):
+    def run(self, output_file):
         predicted_outputs = self._train(
             spectral_radius=1.5,
             leaking_rate=0.1,
@@ -88,6 +88,7 @@ class Example(object):
                 'w_out': self.esn.W_out,
             },
             periodicity=SAMPLES_PER_PERIOD,
+            output_file=output_file,
         )
 
     def optimize(self, exp_key):
