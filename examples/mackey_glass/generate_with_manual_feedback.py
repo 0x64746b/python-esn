@@ -174,7 +174,14 @@ class Example(object):
 
     def _objective(self, hyper_parameters):
         # re-seed for repeatable results
-        np.random.seed(48)
+        random_seed = np.random.randint(2**32)
+        np.random.seed(random_seed)
+
+        logger.debug(
+            'seed: %s | sampled hyper-parameters: %s',
+            random_seed,
+            hyper_parameters
+        )
 
         try:
             predicted_outputs = self._train(*hyper_parameters)
@@ -189,4 +196,8 @@ class Example(object):
             except ValueError:
                 return {'status': hyperopt.STATUS_FAIL}
             else:
-                return {'status': hyperopt.STATUS_OK, 'loss': rmse}
+                return {
+                    'status': hyperopt.STATUS_OK,
+                    'loss': rmse,
+                    'seed': str(random_seed)
+                }
