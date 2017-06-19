@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 class Example(object):
 
+    NUM_TRAINING_ROUNDS = 10
+
     def __init__(
             self,
             training_inputs,
@@ -39,9 +41,6 @@ class Example(object):
     ):
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
-
-        # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::2] = np.nan
 
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
@@ -118,22 +117,14 @@ class Example(object):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
-        )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if not np.isnan(output_date.item()):
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                self.esn.predict(input_date)
+        self.esn.fit(self.training_inputs, self.training_outputs)
+        for repetition in range(1, self.NUM_TRAINING_ROUNDS):
+            logger.info('  Round %d', repetition + 1)
+
+            # washout at beginning of every re-run
+            self.esn._num_seen_inputs = 0
+
+            self.esn.partial_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
@@ -149,7 +140,7 @@ class Example(object):
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.qloguniform('learning_rate', np.log(0.0000001), np.log(0.1), 0.0000001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 100, 10001, 100),
+            hyperopt.hp.quniform('initial_transients', 100, 2001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice('squared_network_state', [False, True]),
             hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
