@@ -63,7 +63,10 @@ class Example(object):
         )
 
         # debug
-        for i, predicted_date in enumerate([self.test_inputs[0]] + predicted_outputs[:-1]):
+        for i, predicted_date in enumerate(np.concatenate((
+                [self.test_inputs[0]],
+                predicted_outputs[:-1])
+        )):
             logger.debug(
                 '% f -> % f (Δ % f)',
                 predicted_date,
