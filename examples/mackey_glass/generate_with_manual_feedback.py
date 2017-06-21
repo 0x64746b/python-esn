@@ -186,21 +186,17 @@ class Example(object):
             hyper_parameters
         )
 
+        predicted_outputs = self._train(*hyper_parameters)
         try:
-            predicted_outputs = self._train(*hyper_parameters)
-        except scipy.sparse.linalg.ArpackNoConvergence:
-            return {'status': hyperopt.STATUS_FAIL}
+            rmse = np.sqrt(mean_squared_error(
+                self.test_outputs,
+                predicted_outputs
+            ))
+        except ValueError as error:
+            return {'status': hyperopt.STATUS_FAIL, 'problem': str(error)}
         else:
-            try:
-                rmse = np.sqrt(mean_squared_error(
-                    self.test_outputs,
-                    predicted_outputs
-                ))
-            except ValueError:
-                return {'status': hyperopt.STATUS_FAIL}
-            else:
-                return {
-                    'status': hyperopt.STATUS_OK,
-                    'loss': rmse,
-                    'seed': str(random_seed)
-                }
+            return {
+                'status': hyperopt.STATUS_OK,
+                'loss': rmse,
+                'seed': str(random_seed)
+            }
