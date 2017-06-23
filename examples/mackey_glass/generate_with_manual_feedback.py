@@ -47,19 +47,20 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self, output_file):
+        np.random.seed(780245044)
+
         predicted_outputs = self._train(
-            reservoir_size=1000,
-            spectral_radius=0.66,
-            leaking_rate=0.5,
-            learning_rate=1e-5,
-            sparsity=0.95,
-            initial_transients=100,
-            state_noise=1e-5,
+            reservoir_size=3000,
+            spectral_radius=1.31,
+            leaking_rate=0.45,
+            learning_rate=0.000011,
+            sparsity=0.67,
+            initial_transients=1000,
+            state_noise=0.0023251,
             squared_network_state=True,
             activation_function=lecun,
-            bias_scale=0.53,
-            signal_scale=0.9,
-            num_tracked_units=2,
+            bias_scale=0.19,
+            signal_scale=-3.4,
         )
 
         # debug
@@ -80,10 +81,6 @@ class Example(object):
                 'predicted outputs': predicted_outputs.flatten(),
             }),
             mode='generate with manual feedback',
-            debug={
-                'training_activations': self.esn.tracked_units,
-                'w_out': self.esn.W_out,
-            },
             output_file=output_file,
         )
 
@@ -147,12 +144,12 @@ class Example(object):
 
     def optimize(self, exp_key):
         search_space = (
-            hyperopt.hp.quniform('reservoir_size', 1000, 15000, 1000),
+            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.qloguniform('learning_rate', np.log(0.0000001), np.log(0.1), 0.0000001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 50, 1000, 50),
+            hyperopt.hp.quniform('initial_transients', 100, 10001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice('squared_network_state', [False, True]),
             hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
@@ -169,7 +166,7 @@ class Example(object):
             self._objective,
             space=search_space,
             algo=hyperopt.tpe.suggest,
-            max_evals=150,
+            max_evals=1000,
             trials=trials,
         )
 
