@@ -32,6 +32,13 @@ def dispatch_examples():
         default=0,
         help='Increase the log level with each use'
     )
+    parser.add_argument(
+        '-s',
+        '--save',
+        metavar='FILE',
+        dest='output_file',
+        help='save the generated plot to the given file instead of showing it'
+    )
 
     # example groups (map to a package)
     example_groups = parser.add_subparsers(
@@ -153,7 +160,7 @@ def dispatch_examples():
     if 'optimize' in args and args.optimize:
         example.optimize(args.optimize)
     else:
-        example.run()
+        example.run(args.output_file)
 
 
 def setup_logging(verbosity):
@@ -162,7 +169,7 @@ def setup_logging(verbosity):
     )
 
 
-def plot_results(data, mode, debug=None, periodicity=None):
+def plot_results(data, mode, debug=None, periodicity=None, output_file=None):
     plt.style.use('ggplot')
 
     if not debug:
@@ -220,4 +227,10 @@ def plot_results(data, mode, debug=None, periodicity=None):
             ])
 
     plt.tight_layout()
-    plt.show()
+
+    if output_file:
+        logging.info('Saving plot to \'%s\'...', output_file)
+        fig.set_size_inches(10.24, 7.68)
+        plt.savefig(output_file, dpi=100)
+    else:
+        plt.show()

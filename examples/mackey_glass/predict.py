@@ -36,7 +36,7 @@ class Example(object):
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
 
-    def run(self):
+    def run(self, output_file):
         predicted_outputs = self._train()
 
         # debug
@@ -53,7 +53,8 @@ class Example(object):
                 'correct outputs': self.test_outputs,
                 'predicted outputs': predicted_outputs.flatten(),
             }),
-            mode='predict'
+            mode='predict',
+            output_file=output_file,
         )
 
     def _train(self):
