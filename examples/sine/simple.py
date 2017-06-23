@@ -54,9 +54,11 @@ class Example(object):
             + np.cos(5 * sampling_points)
         ).reshape(num_sampling_points, 1)
 
-
         self.training_inputs = signal[:training_length]
-        self.training_outputs = signal[1:training_length + 1]
+        self.training_outputs = signal[1:training_length + 1].copy()
+
+        # remove every other label
+        self.training_outputs[1::2] = np.nan
 
         # consume training data
         signal = np.delete(signal, np.s_[:training_length])
@@ -120,9 +122,21 @@ class Example(object):
 
         # train
         self.esn.fit(
-            add_noise(self.training_inputs, input_noise),
-            self.training_outputs
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
         )
+        for input_date, output_date in zip(
+                add_noise(self.training_inputs[1:], input_noise),
+                self.training_outputs[1:]
+        ):
+            if not np.isnan(output_date.item()):
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
