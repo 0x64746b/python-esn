@@ -41,7 +41,8 @@ class Example(object):
         self.training_outputs = training_outputs
 
         # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::2] = np.nan
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
