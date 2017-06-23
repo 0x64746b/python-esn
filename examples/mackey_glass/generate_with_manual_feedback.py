@@ -42,6 +42,9 @@ class Example(object):
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
 
+        # remove many of the training labels to simulate incomplete data
+        self.training_outputs[1::2] = np.nan
+
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
 
@@ -117,14 +120,30 @@ class Example(object):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
-        for repetition in range(1, self.NUM_TRAINING_ROUNDS):
-            logger.info('  Round %d', repetition + 1)
+        for repetition in range(self.NUM_TRAINING_ROUNDS):
+            logger.info('  Round %d', repetition)
 
             # washout at beginning of every re-run
             self.esn._num_seen_inputs = 0
 
-            self.esn.partial_fit(self.training_inputs, self.training_outputs)
+            for input_date, output_date in zip(
+                    self.training_inputs,
+                    self.training_outputs
+            ):
+                if not np.isnan(output_date.item()):
+                    if self.esn._filter is None:
+                        self.esn.fit(
+                            np.array([input_date]),
+                            np.array([output_date])
+                        )
+                    else:
+                        self.esn.partial_fit(
+                            np.array([input_date]),
+                            np.array([output_date])
+                        )
+                else:
+                    # drive reservoir
+                    self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
