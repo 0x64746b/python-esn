@@ -43,20 +43,20 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self, output_file):
-        np.random.seed(780245044)
+        np.random.seed(4006143576)
 
         predicted_outputs = self._train(
             reservoir_size=3000,
-            spectral_radius=1.31,
-            leaking_rate=0.45,
-            learning_rate=0.000011,
-            sparsity=0.67,
-            initial_transients=1000,
-            state_noise=0.0023251,
+            spectral_radius=1.76,
+            leaking_rate=0.3,
+            learning_rate=0.00022,
+            sparsity=0.18,
+            initial_transients=8900,
+            state_noise=0.0031946,
             squared_network_state=True,
-            activation_function=lecun,
-            bias_scale=0.19,
-            signal_scale=-3.4,
+            activation_function=np.tanh,
+            bias_scale=0.88,
+            signal_scale=4.5,
         )
 
         # debug
