@@ -17,10 +17,10 @@ import logging
 import hyperopt
 import numpy as np
 import pandas as pd
-import scipy
 from sklearn.metrics import mean_squared_error
+from sklearn.neural_network import MLPRegressor
 
-from esn import LmsEsn
+from esn import Esn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -40,10 +40,6 @@ class Example(object):
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
 
-        # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::3] = np.nan
-        self.training_outputs[2::3] = np.nan
-
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
 
@@ -54,7 +50,6 @@ class Example(object):
             reservoir_size=3000,
             spectral_radius=1.31,
             leaking_rate=0.45,
-            learning_rate=0.000011,
             sparsity=0.67,
             initial_transients=1000,
             state_noise=0.0023251,
@@ -90,7 +85,6 @@ class Example(object):
             reservoir_size,
             spectral_radius,
             leaking_rate,
-            learning_rate,
             sparsity,
             initial_transients,
             state_noise,
@@ -100,13 +94,12 @@ class Example(object):
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = LmsEsn(
+        self.esn = Esn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            learning_rate=learning_rate,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,
@@ -118,28 +111,41 @@ class Example(object):
         # scale input weights
         self.esn.W_in *= [bias_scale, signal_scale]
 
+        mlp = MLPRegressor()
+
         # train
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
+        input_data = self.esn._prepend_bias(self.training_inputs, sequence=True)
+        reservoir_states = self.esn._harvest_reservoir_states(
+            input_data,
+            self.training_outputs
         )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if not np.isnan(output_date.item()):
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                self.esn.predict(input_date)
+
+        mlp.fit(reservoir_states, self.training_outputs.flatten())
 
         # test
-        predicted_outputs = [self.esn.predict(self.test_inputs[0])]
+        input_date = self.esn._prepend_bias(self.test_inputs[0])
+        reservoir_state = self.esn._update_state(
+            input_date,
+            self.esn.x,
+            np.array([0])
+        )
+        extended_state = np.hstack((input_date, reservoir_state))
+        print('extended state:', extended_state.shape)
+        if self.esn.nonlinear_augmentation:
+            extended_state = np.hstack((extended_state, extended_state[1:] ** 2))
+
+        predicted_outputs = [mlp.predict([extended_state])]
         for i in range(len(self.test_inputs) - 1):
-            predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
+            input_date = self.esn._prepend_bias(predicted_outputs[i])
+            reservoir_state = self.esn._update_state(
+                input_date,
+                self.esn.x,
+                np.array([0])
+            )
+            extended_state = np.hstack((input_date, reservoir_state))
+            if self.esn.nonlinear_augmentation:
+                extended_state = np.hstack((extended_state, extended_state[1:] ** 2))
+            predicted_outputs.append(mlp.predict([extended_state]))
 
         return np.array(predicted_outputs)
 
