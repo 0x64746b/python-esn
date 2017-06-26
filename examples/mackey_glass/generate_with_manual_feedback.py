@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from esn import LmsEsn
+from esn import Esn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -49,7 +49,6 @@ class Example(object):
             reservoir_size=3000,
             spectral_radius=1.76,
             leaking_rate=0.3,
-            learning_rate=0.00022,
             sparsity=0.18,
             initial_transients=8900,
             state_noise=0.0031946,
@@ -85,7 +84,6 @@ class Example(object):
             reservoir_size,
             spectral_radius,
             leaking_rate,
-            learning_rate,
             sparsity,
             initial_transients,
             state_noise,
@@ -95,13 +93,12 @@ class Example(object):
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = LmsEsn(
+        self.esn = Esn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            learning_rate=learning_rate,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,
@@ -128,7 +125,6 @@ class Example(object):
             hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
-            hyperopt.hp.qloguniform('learning_rate', np.log(0.0000001), np.log(0.1), 0.0000001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
             hyperopt.hp.quniform('initial_transients', 100, 10001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
