@@ -18,9 +18,8 @@ import hyperopt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
-from sklearn.neural_network import MLPRegressor
 
-from esn import Esn
+from esn import MlpEsn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -57,8 +56,8 @@ class Example(object):
             activation_function=lecun,
             bias_scale=0.19,
             signal_scale=-3.4,
-            hidden_layer_size=300,
-            mlp_activation='tanh',
+            mlp_hidden_layer_size=300,
+            mlp_activation_function='tanh',
             mlp_solver='adam',
         )
 
@@ -95,12 +94,12 @@ class Example(object):
             activation_function,
             bias_scale,
             signal_scale,
-            hidden_layer_size,
-            mlp_activation,
+            mlp_hidden_layer_size,
+            mlp_activation_function,
             mlp_solver,
             num_tracked_units=0,
     ):
-        self.esn = Esn(
+        self.esn = MlpEsn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
@@ -111,46 +110,22 @@ class Example(object):
             state_noise=state_noise,
             squared_network_state=squared_network_state,
             activation_function=activation_function,
+            mlp_hidden_layer_sizes=(int(mlp_hidden_layer_size),),
+            mlp_activation_function=mlp_activation_function,
+            mlp_solver=mlp_solver,
         )
         self.esn.num_tracked_units = num_tracked_units
 
         # scale input weights
         self.esn.W_in *= [bias_scale, signal_scale]
 
-        mlp = MLPRegressor((int(hidden_layer_size),), activation=mlp_activation, solver=mlp_solver)
-
         # train
-        input_data = self.esn._prepend_bias(self.training_inputs, sequence=True)
-        reservoir_states = self.esn._harvest_reservoir_states(
-            input_data,
-            self.training_outputs
-        )
-
-        mlp.fit(reservoir_states, self.training_outputs.flatten())
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
-        input_date = self.esn._prepend_bias(self.test_inputs[0])
-        reservoir_state = self.esn._update_state(
-            input_date,
-            self.esn.x,
-            np.array([0])
-        )
-        extended_state = np.hstack((input_date, reservoir_state))
-        if self.esn.nonlinear_augmentation:
-            extended_state = np.hstack((extended_state, extended_state[1:] ** 2))
-
-        predicted_outputs = [mlp.predict([extended_state])]
+        predicted_outputs = [self.esn.predict(self.test_inputs[0])]
         for i in range(len(self.test_inputs) - 1):
-            input_date = self.esn._prepend_bias(predicted_outputs[i])
-            reservoir_state = self.esn._update_state(
-                input_date,
-                self.esn.x,
-                np.array([0])
-            )
-            extended_state = np.hstack((input_date, reservoir_state))
-            if self.esn.nonlinear_augmentation:
-                extended_state = np.hstack((extended_state, extended_state[1:] ** 2))
-            predicted_outputs.append(mlp.predict([extended_state]))
+            predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
         return np.array(predicted_outputs)
 
@@ -166,9 +141,9 @@ class Example(object):
             hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-            hyperopt.hp.quniform('hidden_layer_size', 100, 500, 100),
-            hyperopt.hp.choice('mlp_activation', ['tanh']),
-            hyperopt.hp.choice('mlp_solver', ['adam']),
+            hyperopt.hp.quniform('mlp_hidden_layer_size', 100, 1000, 100),
+            hyperopt.hp.choice('mlp_activation_function', ['identity', 'logistic', 'tanh', 'relu']),
+            hyperopt.hp.choice('mlp_solver', ['lbfgs', 'sgd', 'adam']),
         )
 
         trials = hyperopt.mongoexp.MongoTrials(
