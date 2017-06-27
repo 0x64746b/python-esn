@@ -361,20 +361,23 @@ class MlpEsn(Esn):
             solver=self._mlp_solver
         )
 
-        u = self._prepend_bias(input_data, sequence=True)
-        y_teach = add_noise(output_data, self.tau)
-
-        reservoir_states = self._harvest_reservoir_states(u, y_teach)
-
-        self.mlp.fit(reservoir_states, y_teach.flatten())
+        self.partial_fit(input_data, output_data)
 
     def partial_fit(self, input_data, output_data):
         u = self._prepend_bias(input_data, sequence=True)
         y_teach = add_noise(output_data, self.tau)
 
-        reservoir_states = self._harvest_reservoir_states(u, y_teach)
+        n_max = len(input_data)
 
-        self.mlp.partial_fit(reservoir_states, y_teach.flatten())
+        for n in range(n_max):
+            self.x = self._update_state(u[n], self.x, self.y, self.nu)
+            self.y = y_teach[n]
+
+            z = np.hstack((u[n], self.x))
+            if self.nonlinear_augmentation:
+                z = np.hstack((z, z[1:] ** 2))
+
+            self.mlp.partial_fit([z], y_teach[n])
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
