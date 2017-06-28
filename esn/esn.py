@@ -12,6 +12,7 @@ import padasip as pa
 from scipy import sparse
 from scipy.sparse import linalg
 from sklearn.neural_network import MLPRegressor
+from sklearn.utils import gen_batches
 
 from . import activation_functions
 from .preprocessing import add_noise
@@ -342,6 +343,7 @@ class MlpEsn(Esn):
             mlp_hidden_layer_sizes=(100,),
             mlp_activation_function='logistic',
             mlp_solver='adam',
+            batch_size=200,
             *args,
             **kwargs
     ):
@@ -350,6 +352,7 @@ class MlpEsn(Esn):
         self._mlp_hidden_layer_sizes = mlp_hidden_layer_sizes
         self._mlp_activation_function = mlp_activation_function
         self._mlp_solver = mlp_solver
+        self._batch_size = batch_size
 
         # the multilayer perceptron is initialized by each call to `fit()`
         self.mlp = None
@@ -358,7 +361,8 @@ class MlpEsn(Esn):
         self.mlp = MLPRegressor(
             self._mlp_hidden_layer_sizes,
             activation=self._mlp_activation_function,
-            solver=self._mlp_solver
+            solver=self._mlp_solver,
+            batch_size=self._batch_size,
         )
 
         self.partial_fit(input_data, output_data)
@@ -367,17 +371,13 @@ class MlpEsn(Esn):
         u = self._prepend_bias(input_data, sequence=True)
         y_teach = add_noise(output_data, self.tau)
 
-        n_max = len(input_data)
+        for batch in gen_batches(len(input_data), self._batch_size):
+            reservoir_states = self._harvest_reservoir_states(
+                u[batch],
+                y_teach[batch]
+            )
 
-        for n in range(n_max):
-            self.x = self._update_state(u[n], self.x, self.y, self.nu)
-            self.y = y_teach[n]
-
-            z = np.hstack((u[n], self.x))
-            if self.nonlinear_augmentation:
-                z = np.hstack((z, z[1:] ** 2))
-
-            self.mlp.partial_fit([z], y_teach[n])
+            self.mlp.partial_fit(reservoir_states, y_teach[batch].flatten())
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
