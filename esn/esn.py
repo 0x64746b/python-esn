@@ -379,6 +379,32 @@ class MlpEsn(Esn):
 
             self.mlp.partial_fit(reservoir_states, y_teach[batch].flatten())
 
+    def incomplete_fit(self, input_data, output_data):
+        # TODO: Will not work with output feedback, since feedback is missing
+        # TODO: Make `is_missing()` configurable?
+        self.mlp = MLPRegressor(
+            self._mlp_hidden_layer_sizes,
+            activation=self._mlp_activation_function,
+            solver=self._mlp_solver,
+            batch_size=self._batch_size,
+        )
+
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.tau)
+
+        reservoir_states = self._harvest_reservoir_states(
+            u,
+            np.where(np.isnan(y_teach), 0.0, y_teach)
+        )
+
+        # select indices of samples without data
+        missing_data = np.argwhere(np.isnan(y_teach))[:, 0]
+
+        self.mlp.fit(
+            np.delete(reservoir_states, missing_data, axis=0),
+            np.delete(y_teach, missing_data)
+        )
+
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
 
