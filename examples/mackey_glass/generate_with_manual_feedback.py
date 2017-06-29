@@ -124,22 +124,7 @@ class Example(object):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
-        )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if not np.isnan(output_date.item()):
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                self.esn.predict(input_date)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
