@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from esn import MlpEsn
+from esn import Esn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -60,9 +60,6 @@ class Example(object):
             activation_function=lecun,
             bias_scale=0.88,
             signal_scale=3.3,
-            mlp_hidden_layer_size=300,
-            mlp_activation_function='logistic',
-            mlp_solver='adam',
         )
 
         # debug
@@ -98,12 +95,9 @@ class Example(object):
             activation_function,
             bias_scale,
             signal_scale,
-            mlp_hidden_layer_size,
-            mlp_activation_function,
-            mlp_solver,
             num_tracked_units=0,
     ):
-        self.esn = MlpEsn(
+        self.esn = Esn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
@@ -114,9 +108,6 @@ class Example(object):
             state_noise=state_noise,
             squared_network_state=squared_network_state,
             activation_function=activation_function,
-            mlp_hidden_layer_sizes=(int(mlp_hidden_layer_size),),
-            mlp_activation_function=mlp_activation_function,
-            mlp_solver=mlp_solver,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -139,15 +130,12 @@ class Example(object):
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 100, 10001, 100),
+            hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice('squared_network_state', [False, True]),
             hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-            hyperopt.hp.quniform('mlp_hidden_layer_size', 100, 1000, 100),
-            hyperopt.hp.choice('mlp_activation_function', ['identity', 'logistic', 'tanh', 'relu']),
-            hyperopt.hp.choice('mlp_solver', ['lbfgs', 'sgd', 'adam']),
         )
 
         trials = hyperopt.mongoexp.MongoTrials(
