@@ -153,8 +153,8 @@ class Esn(object):
 
         # discard states contaminated by initial transients and their
         # corresponding outputs
-        S = np.delete(S, np.s_[:self.washout], 0)
-        D = np.delete(output_data, np.s_[:self.washout], 0)
+        S = np.delete(S, np.s_[:self.washout], axis=0)
+        D = np.delete(output_data, np.s_[:self.washout], axis=0)
 
         # select indices of samples without data
         missing_data = np.argwhere(np.isnan(D))[:, 0]
