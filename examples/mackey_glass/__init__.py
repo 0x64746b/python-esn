@@ -31,7 +31,7 @@ def load_data(file_name):
     training_inputs = data[:NUM_TRAINING_SAMPLES].reshape(
         NUM_TRAINING_SAMPLES,
         1  # in_size
-    )
+    ).copy()
     training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
         NUM_TRAINING_SAMPLES,
         1  # out_size

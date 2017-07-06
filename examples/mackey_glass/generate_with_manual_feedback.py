@@ -36,12 +36,16 @@ class Example(object):
             test_inputs,
             test_outputs
     ):
+
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
 
-        # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::3] = np.nan
-        self.training_outputs[2::3] = np.nan
+        # remove many of the training points to simulate reduced data
+        self.training_inputs = np.delete(self.training_inputs, np.s_[1::3], axis=0)
+        self.training_outputs = np.delete(self.training_outputs, np.s_[1::3], axis=0)
+
+        self.training_inputs = np.delete(self.training_inputs, np.s_[1::2], axis=0)
+        self.training_outputs = np.delete(self.training_outputs, np.s_[1::2], axis=0)
 
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
