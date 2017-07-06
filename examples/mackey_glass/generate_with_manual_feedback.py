@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from esn import Esn
+from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -38,10 +38,6 @@ class Example(object):
     ):
         self.training_inputs = training_inputs
         self.training_outputs = training_outputs
-
-        # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::3] = np.nan
-        self.training_outputs[2::3] = np.nan
 
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
@@ -88,6 +84,8 @@ class Example(object):
             reservoir_size,
             spectral_radius,
             leaking_rate,
+            forgetting_factor,
+            autocorrelation_init,
             sparsity,
             initial_transients,
             state_noise,
@@ -97,12 +95,14 @@ class Example(object):
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = Esn(
+        self.esn = RlsEsn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
+            forgetting_factor=forgetting_factor,
+            autocorrelation_init=autocorrelation_init,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,
@@ -115,7 +115,7 @@ class Example(object):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
@@ -129,6 +129,8 @@ class Example(object):
             hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
+            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
+            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
             hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
@@ -158,21 +160,29 @@ class Example(object):
         random_seed = np.random.randint(2**32)
         np.random.seed(random_seed)
 
-        logger.debug(
-            'seed: %s | sampled hyper-parameters: %s',
-            random_seed,
-            hyper_parameters
-        )
-
-        predicted_outputs = self._train(*hyper_parameters)
         try:
+            predicted_outputs = self._train(*hyper_parameters)
             rmse = np.sqrt(mean_squared_error(
                 self.test_outputs,
                 predicted_outputs
             ))
         except ValueError as error:
+            logger.info(
+                'seed: %s | sampled hyper-parameters: %s => %s',
+                random_seed,
+                hyper_parameters,
+                error,
+            )
+
             return {'status': hyperopt.STATUS_FAIL, 'problem': str(error)}
         else:
+            logger.info(
+                'seed: %s | sampled hyper-parameters: %s => %s',
+                random_seed,
+                hyper_parameters,
+                rmse,
+            )
+
             return {
                 'status': hyperopt.STATUS_OK,
                 'loss': rmse,
