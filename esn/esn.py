@@ -140,6 +140,30 @@ class Esn(object):
         if self.num_tracked_units:
             self.tracked_units = self.track_most_influential_units(S)
 
+    def incomplete_fit(self, input_data, output_data):
+        # TODO: Will not work with output feedback, since feedback is missing
+        # TODO: Make `is_missing()` configurable?
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.tau)
+
+        S = self._harvest_reservoir_states(
+            u,
+            np.where(np.isnan(y_teach), 0.0, y_teach)
+        )
+
+        # discard states contaminated by initial transients and their
+        # corresponding outputs
+        S = np.delete(S, np.s_[:self.washout], axis=0)
+        D = np.delete(output_data, np.s_[:self.washout], axis=0)
+
+        # select indices of samples without data
+        missing_data = np.argwhere(np.isnan(D))[:, 0]
+
+        self.W_out = self._compute_output_weights(
+            np.delete(S, missing_data, axis=0),
+            np.delete(D, missing_data, axis=0)
+        )
+
     def _harvest_reservoir_states(self, u, y):
         """
         Drive the dynamical reservoir with the training data.
@@ -365,6 +389,7 @@ class MlpEsn(Esn):
             batch_size=self._batch_size,
         )
 
+        # FIXME: Handle washout on first call
         self.partial_fit(input_data, output_data)
 
     def partial_fit(self, input_data, output_data):
@@ -378,6 +403,19 @@ class MlpEsn(Esn):
             )
 
             self.mlp.partial_fit(reservoir_states, y_teach[batch].flatten())
+
+    def incomplete_fit(self, input_data, output_data):
+        self.mlp = MLPRegressor(
+            self._mlp_hidden_layer_sizes,
+            activation=self._mlp_activation_function,
+            solver=self._mlp_solver,
+            batch_size=self._batch_size,
+        )
+
+        super(MlpEsn, self).incomplete_fit(input_data, output_data)
+
+    def _compute_output_weights(self, S, D):
+        self.mlp.fit(S, D.flatten())
 
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
