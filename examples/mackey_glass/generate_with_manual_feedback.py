@@ -17,10 +17,9 @@ import logging
 import hyperopt
 import numpy as np
 import pandas as pd
-import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import LmsEsn
+from esn import MlpEsn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 
@@ -48,20 +47,22 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self, output_file):
-        np.random.seed(780245044)
+        np.random.seed(1839385064)
 
         predicted_outputs = self._train(
             reservoir_size=3000,
-            spectral_radius=1.31,
-            leaking_rate=0.45,
-            learning_rate=0.000011,
-            sparsity=0.67,
-            initial_transients=1000,
-            state_noise=0.0023251,
+            spectral_radius=1.14,
+            leaking_rate=0.28,
+            sparsity=0.66,
+            initial_transients=5000,
+            state_noise=0.0047857,
             squared_network_state=True,
             activation_function=lecun,
-            bias_scale=0.19,
-            signal_scale=-3.4,
+            bias_scale=0.88,
+            signal_scale=3.3,
+            mlp_hidden_layer_size=300,
+            mlp_activation_function='logistic',
+            mlp_solver='adam',
         )
 
         # debug
@@ -90,7 +91,6 @@ class Example(object):
             reservoir_size,
             spectral_radius,
             leaking_rate,
-            learning_rate,
             sparsity,
             initial_transients,
             state_noise,
@@ -98,20 +98,25 @@ class Example(object):
             activation_function,
             bias_scale,
             signal_scale,
+            mlp_hidden_layer_size,
+            mlp_activation_function,
+            mlp_solver,
             num_tracked_units=0,
     ):
-        self.esn = LmsEsn(
+        self.esn = MlpEsn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            learning_rate=learning_rate,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,
             squared_network_state=squared_network_state,
             activation_function=activation_function,
+            mlp_hidden_layer_sizes=(int(mlp_hidden_layer_size),),
+            mlp_activation_function=mlp_activation_function,
+            mlp_solver=mlp_solver,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -148,7 +153,6 @@ class Example(object):
             hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
-            hyperopt.hp.qloguniform('learning_rate', np.log(0.0000001), np.log(0.1), 0.0000001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
             hyperopt.hp.quniform('initial_transients', 100, 10001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
@@ -156,6 +160,9 @@ class Example(object):
             hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
+            hyperopt.hp.quniform('mlp_hidden_layer_size', 100, 1000, 100),
+            hyperopt.hp.choice('mlp_activation_function', ['identity', 'logistic', 'tanh', 'relu']),
+            hyperopt.hp.choice('mlp_solver', ['lbfgs', 'sgd', 'adam']),
         )
 
         trials = hyperopt.mongoexp.MongoTrials(

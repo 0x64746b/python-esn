@@ -21,7 +21,7 @@ import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import LmsEsn
+from esn import MlpEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
 from esn.examples import plot_results
@@ -51,10 +51,6 @@ class Example(object):
             len(training_outputs),
             1
         )
-        # remove many of the training labels to simulate incomplete data
-        self.training_outputs[1::2] = np.nan
-        self.training_outputs[1::3] = np.nan
-
         self.test_inputs = np.array(list(zip(*test_inputs)))
         self.test_outputs = test_outputs
 
@@ -62,11 +58,9 @@ class Example(object):
         predicted_outputs = self._train(
             spectral_radius=1.5,
             leaking_rate=0.1,
-            learning_rate=0.00003,
             bias_scale=2.6,
             frequency_scale=2.2,
             signal_scale=5.5,
-            num_tracked_units=3,
         )
 
         # debug
@@ -86,11 +80,6 @@ class Example(object):
                 'predicted outputs': predicted_outputs,
             }),
             mode='generate with manual feedback',
-            debug={
-                'training_activations': self.esn.tracked_units,
-                'test_activations': self.test_activations,
-                'w_out': self.esn.W_out,
-            },
             periodicity=SAMPLES_PER_PERIOD,
             output_file=output_file,
         )
@@ -99,7 +88,6 @@ class Example(object):
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
@@ -124,19 +112,17 @@ class Example(object):
             self,
             spectral_radius,
             leaking_rate,
-            learning_rate,
             bias_scale=1.0,
             frequency_scale=1.0,
             signal_scale=1.0,
             num_tracked_units=0,
     ):
-        self.esn = LmsEsn(
+        self.esn = MlpEsn(
             in_size=2,
             reservoir_size=200,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            learning_rate=learning_rate,
             sparsity=0.95,
             initial_transients=1000,
             squared_network_state=True,
@@ -148,22 +134,7 @@ class Example(object):
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
 
         # train
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
-        )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if not np.isnan(output_date.item()):
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                self.esn.predict(input_date)
+        self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
         S = [np.hstack((

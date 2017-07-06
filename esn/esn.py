@@ -11,6 +11,8 @@ import numpy as np
 import padasip as pa
 from scipy import sparse
 from scipy.sparse import linalg
+from sklearn.neural_network import MLPRegressor
+from sklearn.utils import gen_batches
 
 from . import activation_functions
 from .preprocessing import add_noise
@@ -332,3 +334,60 @@ class LmsEsn(Esn):
             self.L,
             self._state_size
         ))
+
+
+class MlpEsn(Esn):
+
+    def __init__(
+            self,
+            mlp_hidden_layer_sizes=(100,),
+            mlp_activation_function='logistic',
+            mlp_solver='adam',
+            batch_size=200,
+            *args,
+            **kwargs
+    ):
+        super(MlpEsn, self).__init__(*args, **kwargs)
+
+        self._mlp_hidden_layer_sizes = mlp_hidden_layer_sizes
+        self._mlp_activation_function = mlp_activation_function
+        self._mlp_solver = mlp_solver
+        self._batch_size = batch_size
+
+        # the multilayer perceptron is initialized by each call to `fit()`
+        self.mlp = None
+
+    def fit(self, input_data, output_data):
+        self.mlp = MLPRegressor(
+            self._mlp_hidden_layer_sizes,
+            activation=self._mlp_activation_function,
+            solver=self._mlp_solver,
+            batch_size=self._batch_size,
+        )
+
+        self.partial_fit(input_data, output_data)
+
+    def partial_fit(self, input_data, output_data):
+        u = self._prepend_bias(input_data, sequence=True)
+        y_teach = add_noise(output_data, self.tau)
+
+        for batch in gen_batches(len(input_data), self._batch_size):
+            reservoir_states = self._harvest_reservoir_states(
+                u[batch],
+                y_teach[batch]
+            )
+
+            self.mlp.partial_fit(reservoir_states, y_teach[batch].flatten())
+
+    def predict(self, input_date):
+        u = self._prepend_bias(input_date)
+
+        self.x = self._update_state(u, self.x, self.y)
+        z = np.hstack((u, self.x))
+
+        if self.nonlinear_augmentation:
+            z = np.hstack((z, z[1:] ** 2))
+
+        self.y = self.mlp.predict([z])
+
+        return self.y
