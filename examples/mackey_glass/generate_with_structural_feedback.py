@@ -58,10 +58,10 @@ class Example(object):
 
         plot_results(
             data=pd.DataFrame({
-                'correct outputs': self.test_outputs,
-                'predicted outputs': predicted_outputs.flatten(),
+                'Correct outputs': self.test_outputs,
+                'Predicted outputs': predicted_outputs.flatten(),
             }),
-            mode='generate with structural feedback',
+            title='Generate with structural feedback',
             debug={
                 'training_activations': self.esn.tracked_units,
                 'w_out': self.esn.W_out,

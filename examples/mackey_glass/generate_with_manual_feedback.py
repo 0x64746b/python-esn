@@ -76,10 +76,10 @@ class Example(object):
 
         plot_results(
             data=pd.DataFrame({
-                'correct outputs': self.test_outputs,
-                'predicted outputs': predicted_outputs.flatten(),
+                'Correct outputs': self.test_outputs,
+                'Predicted outputs': predicted_outputs.flatten(),
             }),
-            mode='generate with manual feedback',
+            title='Generate with manual feedback',
             output_file=output_file,
         )
 
