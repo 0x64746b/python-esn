@@ -43,20 +43,20 @@ class Example(object):
         self.test_outputs = test_outputs
 
     def run(self, output_file):
-        np.random.seed(780245044)
+        np.random.seed(4059911975)
 
         predicted_outputs = self._train(
             reservoir_size=3000,
-            spectral_radius=1.31,
-            leaking_rate=0.45,
-            learning_rate=0.000011,
-            sparsity=0.67,
-            initial_transients=1000,
-            state_noise=0.0023251,
+            spectral_radius=1.73,
+            leaking_rate=0.42,
+            learning_rate=0.0001144,
+            sparsity=0.14,
+            initial_transients=2100,
+            state_noise=0.0092445,
             squared_network_state=True,
-            activation_function=lecun,
-            bias_scale=0.19,
-            signal_scale=-3.4,
+            activation_function=np.tanh,
+            bias_scale=1.66,
+            signal_scale=3.2,
         )
 
         # debug
@@ -76,7 +76,7 @@ class Example(object):
                 'Correct outputs': self.test_outputs,
                 'Predicted outputs': predicted_outputs.flatten(),
             }),
-            title='Generate with manual feedback',
+            title='Mackey-Glass; LMS; 10k samples',
             output_file=output_file,
         )
 
