@@ -56,11 +56,11 @@ class Example(object):
 
         plot_results(
             data=pd.DataFrame({
-                'frequencies': self.test_inputs[:, 0],
-                'correct outputs': self.test_outputs,
-                'predicted outputs': predicted_outputs.flatten(),
+                'Frequencies': self.test_inputs[:, 0],
+                'Correct outputs': self.test_outputs,
+                'Predicted outputs': predicted_outputs.flatten(),
             }),
-            mode='predict',
+            title='Predict',
             periodicity=SAMPLES_PER_PERIOD,
             output_file=output_file,
         )
