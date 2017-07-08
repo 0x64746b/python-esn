@@ -16,25 +16,13 @@ import numpy as np
 import pandas as pd
 
 from esn import WienerHopfEsn
-from esn.examples import plot_results
+from esn.examples import EsnExample
 
 
 logger = logging.getLogger(__name__)
 
 
-class Example(object):
-
-    def __init__(
-            self,
-            training_inputs,
-            training_outputs,
-            test_inputs,
-            test_outputs
-    ):
-        self.training_inputs = training_inputs
-        self.training_outputs = training_outputs
-        self.test_inputs = test_inputs
-        self.test_outputs = test_outputs
+class Example(EsnExample):
 
     def run(self, output_file):
         predicted_outputs = self._train()
@@ -48,7 +36,7 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(
+        self._plot_results(
             data=pd.DataFrame({
                 'Correct outputs': self.test_outputs,
                 'Predicted outputs': predicted_outputs.flatten(),

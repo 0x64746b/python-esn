@@ -17,30 +17,16 @@ import logging
 import hyperopt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
 
 from esn import RlsEsn
 from esn.activation_functions import lecun
-from esn.examples import plot_results
+from esn.examples import EsnExample
 
 
 logger = logging.getLogger(__name__)
 
 
-class Example(object):
-
-    def __init__(
-            self,
-            training_inputs,
-            training_outputs,
-            test_inputs,
-            test_outputs
-    ):
-        self.training_inputs = training_inputs
-        self.training_outputs = training_outputs
-
-        self.test_inputs = test_inputs
-        self.test_outputs = test_outputs
+class Example(EsnExample):
 
     def run(self, output_file):
         np.random.seed(1839385064)
@@ -70,7 +56,7 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(
+        self._plot_results(
             data=pd.DataFrame({
                 'Correct outputs': self.test_outputs,
                 'Predicted outputs': predicted_outputs.flatten(),
@@ -154,37 +140,3 @@ class Example(object):
         )
 
         logger.info('Best parameter combination: %s', best)
-
-    def _objective(self, hyper_parameters):
-        # re-seed for repeatable results
-        random_seed = np.random.randint(2**32)
-        np.random.seed(random_seed)
-
-        try:
-            predicted_outputs = self._train(*hyper_parameters)
-            rmse = np.sqrt(mean_squared_error(
-                self.test_outputs,
-                predicted_outputs
-            ))
-        except ValueError as error:
-            logger.info(
-                'seed: %s | sampled hyper-parameters: %s => %s',
-                random_seed,
-                hyper_parameters,
-                error,
-            )
-
-            return {'status': hyperopt.STATUS_FAIL, 'problem': str(error)}
-        else:
-            logger.info(
-                'seed: %s | sampled hyper-parameters: %s => %s',
-                random_seed,
-                hyper_parameters,
-                rmse,
-            )
-
-            return {
-                'status': hyperopt.STATUS_OK,
-                'loss': rmse,
-                'seed': str(random_seed)
-            }
