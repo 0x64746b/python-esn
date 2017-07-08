@@ -19,7 +19,7 @@ import pandas as pd
 import scipy
 from sklearn.metrics import mean_squared_error
 
-from esn import LmsEsn
+from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import plot_results
 from esn.preprocessing import add_noise, scale
@@ -32,7 +32,7 @@ class Example(object):
 
     def __init__(self):
         # generate data
-        num_periods = 4000
+        num_periods = 1000
         sampling_rate = 50  # points per period
         num_sampling_points = num_periods * sampling_rate
 
@@ -70,7 +70,8 @@ class Example(object):
         predicted_outputs = self._train(
             spectral_radius=1.11,
             leaking_rate=0.75,
-            learning_rate=0.00002,
+            forgetting_factor=0.99998,
+            autocorrelation_init=0.1,
             bias_scale=-0.4,
             signal_scale=1.2,
             state_noise=0.004,
@@ -99,19 +100,21 @@ class Example(object):
             self,
             spectral_radius,
             leaking_rate,
-            learning_rate,
+            forgetting_factor,
+            autocorrelation_init,
             bias_scale,
             signal_scale,
             state_noise,
             input_noise,
     ):
-        self.esn = LmsEsn(
+        self.esn = RlsEsn(
             in_size=1,
-            reservoir_size=3000,
+            reservoir_size=1000,
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            learning_rate=learning_rate,
+            forgetting_factor=forgetting_factor,
+            autocorrelation_init=autocorrelation_init,
             state_noise=state_noise,
             sparsity=0.95,
             initial_transients=300,
@@ -149,7 +152,8 @@ class Example(object):
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
+            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
+            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
             hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),

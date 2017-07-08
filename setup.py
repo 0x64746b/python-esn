@@ -26,7 +26,7 @@ setuptools.setup(
 
     install_requires=[
         'numpy>=1.12.0',
-        'padasip==1.0.0',
+        'padasip>=1.1.0',
         'scipy>=0.18.1',
     ],
     extras_require={
