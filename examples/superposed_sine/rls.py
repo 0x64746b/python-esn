@@ -28,12 +28,22 @@ logger = logging.getLogger(__name__)
 
 class RlsExample(EsnExample):
 
+    search_space = (
+        hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+        hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+        hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
+        hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
+        hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
+        hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
+        hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
+        hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
+    )
+
     def __init__(self, *data):
         super(RlsExample, self).__init__(*data)
 
         # remove every other label
         self.training_outputs[1::2] = np.nan
-
 
     def run(self, output_file):
         predicted_outputs = self._train(
@@ -116,30 +126,3 @@ class RlsExample(EsnExample):
             predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
         return np.array(predicted_outputs)
-
-    def optimize(self, exp_key):
-        search_space = (
-            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
-            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
-            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
-            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
-            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
-            hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
-        )
-
-        trials = hyperopt.mongoexp.MongoTrials(
-            'mongo://localhost:27017/python_esn_trials/jobs',
-            exp_key=exp_key,
-        )
-
-        best = hyperopt.fmin(
-            self._objective,
-            space=search_space,
-            algo=hyperopt.tpe.suggest,
-            max_evals=150,
-            trials=trials,
-        )
-
-        logger.info('Best parameter combination: %s', best)

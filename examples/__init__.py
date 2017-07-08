@@ -120,6 +120,22 @@ class EsnExample(object):
         else:
             plt.show()
 
+    def optimize(self, exp_key):
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
+
+        best = hyperopt.fmin(
+            self._objective,
+            space=self.search_space,
+            algo=hyperopt.tpe.suggest,
+            max_evals=1000,
+            trials=trials,
+        )
+
+        logger.info('Best parameter combination: %s', best)
+
     def _objective(self, hyper_parameters):
         start = timer()
 

@@ -31,6 +31,14 @@ logger = logging.getLogger(__name__)
 
 class MlpExample(EsnExample):
 
+    search_space = (
+        hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+        hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+        hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
+        hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
+        hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
+    )
+
     def __init__(
             self,
             training_inputs,
@@ -78,30 +86,6 @@ class MlpExample(EsnExample):
             periodicity=SAMPLES_PER_PERIOD,
             output_file=output_file,
         )
-
-    def optimize(self, exp_key):
-        search_space = (
-            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
-            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
-            hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
-            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-        )
-
-        trials = hyperopt.mongoexp.MongoTrials(
-            'mongo://localhost:27017/python_esn_trials/jobs',
-            exp_key=exp_key,
-        )
-
-        best = hyperopt.fmin(
-            self._objective,
-            space=search_space,
-            algo=hyperopt.tpe.suggest,
-            max_evals=150,
-            trials=trials,
-        )
-
-        logger.info('Best parameter combination: %s', best)
 
     def _train(
             self,
