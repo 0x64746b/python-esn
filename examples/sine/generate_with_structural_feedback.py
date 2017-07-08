@@ -73,11 +73,11 @@ class Example(object):
 
         plot_results(
             data=pd.DataFrame({
-                'frequencies': self.test_inputs.flatten(),
-                'correct outputs': self.test_outputs,
-                'predicted outputs': predicted_outputs,
+                'Frequencies': self.test_inputs.flatten(),
+                'Correct outputs': self.test_outputs,
+                'Predicted outputs': predicted_outputs,
             }),
-            mode='generate with structural feedback',
+            title='Generate with structural feedback',
             debug={
                 'training_activations': self.esn.tracked_units,
                 'test_activations': self.test_activations,

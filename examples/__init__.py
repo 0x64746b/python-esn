@@ -169,8 +169,10 @@ def setup_logging(verbosity):
     )
 
 
-def plot_results(data, mode, debug=None, periodicity=None, output_file=None):
+def plot_results(data, title, debug=None, periodicity=None, output_file=None):
     plt.style.use('ggplot')
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
 
     if not debug:
         fig, main = plt.subplots()
@@ -179,20 +181,27 @@ def plot_results(data, mode, debug=None, periodicity=None, output_file=None):
     else:
         fig, (main, training_activations, extra) = plt.subplots(nrows=3)
 
-    main.set_title('Mode: {}'.format(mode))
-    data.plot(ax=main)
+    main.set_title(title)
+    data.plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
     if periodicity:
         main.xaxis.set_major_locator(ticker.MultipleLocator(periodicity))
 
     try:
         rmse = np.sqrt(mean_squared_error(
-            data['correct outputs'],
-            data['predicted outputs']
+            data['Correct outputs'],
+            data['Predicted outputs']
         ))
     except ValueError as error:
         rmse = error
     finally:
-        main.add_artist(AnchoredText('RMSE: {}'.format(rmse), loc=2))
+        error_box = AnchoredText('RMSE: {}'.format(rmse), loc=2)
+        # mimic style of legend
+        error_box.patch.set(
+            boxstyle=main.get_legend().get_frame().get_boxstyle(),
+            facecolor=main.get_legend().get_frame().get_facecolor(),
+            edgecolor=main.get_legend().get_frame().get_edgecolor(),
+        )
+        main.add_artist(error_box)
 
     if debug:
         training_activations.set_title(
