@@ -41,9 +41,6 @@ class Example(object):
         self.training_outputs = training_outputs
 
         # remove many of the training points to simulate reduced data
-        self.training_inputs = np.delete(self.training_inputs, np.s_[1::3], axis=0)
-        self.training_outputs = np.delete(self.training_outputs, np.s_[1::3], axis=0)
-
         self.training_inputs = np.delete(self.training_inputs, np.s_[1::2], axis=0)
         self.training_outputs = np.delete(self.training_outputs, np.s_[1::2], axis=0)
 
