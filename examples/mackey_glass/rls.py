@@ -1,9 +1,6 @@
 # coding: utf-8
 
-"""
-Manually feed back predicted values into an `Esn`
-instead of using structural feedback.
-"""
+"""Train an ESN with a recursive least squares filter."""
 
 from __future__ import (
     absolute_import,
@@ -26,7 +23,7 @@ from esn.examples import EsnExample
 logger = logging.getLogger(__name__)
 
 
-class Example(EsnExample):
+class RlsExample(EsnExample):
 
     def run(self, output_file):
         np.random.seed(1839385064)

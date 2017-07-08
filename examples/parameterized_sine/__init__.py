@@ -1,6 +1,6 @@
 # coding: utf-8
 
-"""Learn a sine signal."""
+"""Learn a parameterized sine signal."""
 
 
 from __future__ import (
@@ -83,7 +83,4 @@ def load_data():
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
-from .generate_with_manual_feedback import Example as ManualFeedbackGenerator
-from .generate_with_structural_feedback import Example as StructuralFeedbackGenerator
-from .predict import Example as Predictor
-from .simple import Example as UnparametrizedGenerator
+from .mlp import MlpExample

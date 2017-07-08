@@ -159,7 +159,7 @@ class EsnExample(object):
 
 def dispatch_examples():
     """The main entry point."""
-    from esn.examples import mackey_glass, sine
+    from esn.examples import mackey_glass, parameterized_sine, superposed_sine
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -189,9 +189,13 @@ def dispatch_examples():
         'mackey-glass',
         help=mackey_glass.__doc__
     )
-    sine_group = example_groups.add_parser(
-        'sine',
-        help=sine.__doc__
+    parameterized_sine_group = example_groups.add_parser(
+        'parameterized-sine',
+        help=parameterized_sine.__doc__
+    )
+    superposed_sine_group = example_groups.add_parser(
+        'superposed-sine',
+        help=superposed_sine.__doc__
     )
 
     #  mackey-glass examples (map to a module)
@@ -201,70 +205,51 @@ def dispatch_examples():
     )
     mackey_glass_examples.required = True
 
-    mackey_glass_predict = mackey_glass_examples.add_parser(
-        'predict',
-        help=mackey_glass.predict.__doc__
+    mackey_glass_rls = mackey_glass_examples.add_parser(
+        'rls',
+        help=mackey_glass.rls.__doc__
     )
-    mackey_glass_predict.add_argument(
-        'data_file',
-        help='the file containing the data to learn'
-    )
-
-    mackey_glass_generate = mackey_glass_examples.add_parser(
-        'generate',
-        help=mackey_glass.generate_with_structural_feedback.__doc__
-    )
-    mackey_glass_generate.add_argument(
-        '-m',
-        '--with-manual-feedback',
-        action='store_true',
-        help=mackey_glass.generate_with_manual_feedback.__doc__
-    )
-    mackey_glass_generate.add_argument(
+    mackey_glass_rls.add_argument(
         '-o',
         '--optimize',
         metavar='EXP_KEY',
         help='Optimize the hyperparameters of the example instead of running it %(default)s'
     )
-    mackey_glass_generate.add_argument(
+    mackey_glass_rls.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
-    #  sine examples (map to a module)
-    sine_examples = sine_group.add_subparsers(
+    #  parametrized sine examples (map to a module)
+    parameterized_sine_examples = parameterized_sine_group.add_subparsers(
         title='examples',
         dest='example'
     )
-    sine_examples.required = True
+    parameterized_sine_examples.required = True
 
-    sine_simple = sine_examples.add_parser(
-        'simple',
-        help=sine.simple.__doc__
+    parameterized_sine_mlp = parameterized_sine_examples.add_parser(
+        'mlp',
+        help=parameterized_sine.mlp.__doc__
     )
-    sine_simple.add_argument(
+    parameterized_sine_mlp.add_argument(
         '-o',
         '--optimize',
         metavar='EXP_KEY',
         help='Optimize the hyperparameters of the example instead of running it'
     )
 
-    sine_examples.add_parser(
-        'predict',
-        help=sine.predict.__doc__
+    #  superposed sine examples (map to a module)
+    superposed_sine_examples = superposed_sine_group.add_subparsers(
+        title='examples',
+        dest='example'
     )
+    superposed_sine_examples.required = True
 
-    sine_generate = sine_examples.add_parser(
-        'generate',
-        help=sine.generate_with_structural_feedback.__doc__
+    superposed_sine_rls = superposed_sine_examples.add_parser(
+        'rls',
+        help=superposed_sine.rls.__doc__
     )
-    sine_generate.add_argument(
-        '-m',
-        '--with-manual-feedback',
-        action='store_true',
-        help=sine.generate_with_manual_feedback.__doc__
-    )
-    sine_generate.add_argument(
+    superposed_sine_rls.add_argument(
         '-o',
         '--optimize',
         metavar='EXP_KEY',
@@ -283,19 +268,17 @@ def dispatch_examples():
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
         data = example_group.load_data(args.data_file)
-    elif args.example_group == 'sine':
-        example_group = sine
+    elif args.example_group == 'parameterized-sine':
+        example_group = parameterized_sine
+        data = example_group.load_data()
+    elif args.example_group == 'superposed-sine':
+        example_group = superposed_sine
         data = example_group.load_data()
 
-    if args.example == 'generate':
-        if not args.with_manual_feedback:
-            example = example_group.StructuralFeedbackGenerator(*data)
-        else:
-            example = example_group.ManualFeedbackGenerator(*data)
-    elif args.example == 'predict':
-        example = example_group.Predictor(*data)
-    elif args.example == 'simple':
-        example = example_group.UnparametrizedGenerator()
+    if args.example == 'rls':
+        example = example_group.RlsExample(*data)
+    elif args.example == 'mlp':
+        example = example_group.MlpExample(*data)
 
     if 'optimize' in args and args.optimize:
         example.optimize(args.optimize)
