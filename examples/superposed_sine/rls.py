@@ -1,6 +1,6 @@
 # coding: utf-8
 
-"""Generate an unparametrized sine signal"""
+"""Train an ESN with a recursive least squares filter."""
 
 
 from __future__ import (
@@ -26,43 +26,14 @@ from esn.preprocessing import add_noise, scale
 logger = logging.getLogger(__name__)
 
 
-class Example(EsnExample):
+class RlsExample(EsnExample):
 
-    def __init__(self):
-        # generate data
-        num_periods = 1000
-        sampling_rate = 50  # points per period
-        num_sampling_points = num_periods * sampling_rate
-
-        training_length = int(num_sampling_points * 0.7)
-        test_length = 500
-
-        sampling_points = np.linspace(
-            0,
-            num_periods * 2 * np.pi,
-            num=num_sampling_points
-        )
-        signal = scale(
-            np.sin(sampling_points)
-            + np.sin(2 * sampling_points)
-            + np.sin(3.3 * sampling_points)
-            + np.sin(4 * sampling_points)
-            + np.cos(2.2 * sampling_points)
-            + np.cos(4 * sampling_points)
-            + np.cos(5 * sampling_points)
-        ).reshape(num_sampling_points, 1)
-
-        self.training_inputs = signal[:training_length]
-        self.training_outputs = signal[1:training_length + 1].copy()
+    def __init__(self, *data):
+        super(RlsExample, self).__init__(*data)
 
         # remove every other label
         self.training_outputs[1::2] = np.nan
 
-        # consume training data
-        signal = np.delete(signal, np.s_[:training_length])
-
-        self.test_inputs = signal[:test_length]
-        self.test_outputs = signal[1:test_length + 1]
 
     def run(self, output_file):
         predicted_outputs = self._train(

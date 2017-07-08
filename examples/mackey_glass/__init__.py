@@ -48,6 +48,4 @@ def load_data(file_name):
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
-from .generate_with_manual_feedback import Example as ManualFeedbackGenerator
-from .generate_with_structural_feedback import Example as StructuralFeedbackGenerator
-from .predict import Example as Predictor
+from .rls import RlsExample
