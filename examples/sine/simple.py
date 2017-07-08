@@ -16,19 +16,17 @@ import hyperopt
 import hyperopt.mongoexp
 import numpy as np
 import pandas as pd
-import scipy
-from sklearn.metrics import mean_squared_error
 
 from esn import RlsEsn
 from esn.activation_functions import lecun
-from esn.examples import plot_results
+from esn.examples import EsnExample
 from esn.preprocessing import add_noise, scale
 
 
 logger = logging.getLogger(__name__)
 
 
-class Example(object):
+class Example(EsnExample):
 
     def __init__(self):
         # generate data
@@ -87,7 +85,7 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(
+        self._plot_results(
             data=pd.DataFrame({
                 'Correct outputs': self.test_outputs,
                 'Predicted outputs': predicted_outputs.flatten(),
@@ -174,22 +172,3 @@ class Example(object):
         )
 
         logger.info('Best parameter combination: %s', best)
-
-    def _objective(self, hyper_parameters):
-        # re-seed for repeatable results
-        np.random.seed(48)
-
-        try:
-            predicted_outputs = self._train(*hyper_parameters)
-        except scipy.sparse.linalg.ArpackNoConvergence:
-            return {'status': hyperopt.STATUS_FAIL}
-        else:
-            try:
-                rmse = np.sqrt(mean_squared_error(
-                    self.test_outputs,
-                    predicted_outputs
-                ))
-            except ValueError:
-                return {'status': hyperopt.STATUS_FAIL}
-            else:
-                return {'status': hyperopt.STATUS_OK, 'loss': rmse}

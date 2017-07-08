@@ -15,19 +15,17 @@ import pickle
 import hyperopt
 import numpy as np
 import pandas as pd
-import scipy
-from sklearn.metrics import mean_squared_error
 
 from esn import Esn
 from esn.activation_functions import lecun, lecun_inv
-from esn.examples import plot_results
+from esn.examples import EsnExample
 from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 logger = logging.getLogger(__name__)
 
 
-class Example(object):
+class Example(EsnExample):
 
     def __init__(
             self,
@@ -71,7 +69,7 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(
+        self._plot_results(
             data=pd.DataFrame({
                 'Frequencies': self.test_inputs.flatten(),
                 'Correct outputs': self.test_outputs,
@@ -88,25 +86,6 @@ class Example(object):
         )
 
     def optimize(self, exp_key):
-        def objective(hyper_parameters):
-            # re-seed for repeatable results
-            np.random.seed(48)
-
-            try:
-                predicted_outputs = self._train(*hyper_parameters)
-            except scipy.sparse.linalg.ArpackNoConvergence:
-                return {'status': hyperopt.STATUS_FAIL}
-            else:
-                try:
-                    rmse = np.sqrt(mean_squared_error(
-                        self.test_outputs,
-                        predicted_outputs
-                    ))
-                except ValueError:
-                    return {'status': hyperopt.STATUS_FAIL}
-                else:
-                    return {'status': hyperopt.STATUS_OK, 'loss': rmse}
-
         search_space = (
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
@@ -118,7 +97,7 @@ class Example(object):
         trials = hyperopt.Trials(exp_key=exp_key)
 
         best = hyperopt.fmin(
-            objective,
+            self._objective,
             space=search_space,
             algo=hyperopt.tpe.suggest,
             max_evals=150,

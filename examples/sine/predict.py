@@ -16,14 +16,14 @@ import pandas as pd
 
 from esn import WienerHopfEsn
 from esn.activation_functions import lecun
-from esn.examples import plot_results
+from esn.examples import EsnExample
 from esn.examples.sine import SAMPLES_PER_PERIOD
 
 
 logger = logging.getLogger(__name__)
 
 
-class Example(object):
+class Example(EsnExample):
 
     def __init__(
             self,
@@ -54,7 +54,7 @@ class Example(object):
                 self.test_outputs[i] - predicted_outputs[i]
             )
 
-        plot_results(
+        self._plot_results(
             data=pd.DataFrame({
                 'Frequencies': self.test_inputs[:, 0],
                 'Correct outputs': self.test_outputs,
