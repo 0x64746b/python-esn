@@ -43,7 +43,7 @@ def load_data():
     training_outputs = signal[1:TRAINING_LENGTH + 1].copy()
 
     # consume training data
-    signal = np.delete(signal, np.s_[:TRAINING_LENGTH])
+    signal = np.delete(signal, np.s_[:TRAINING_LENGTH], axis=0)
 
     test_inputs = signal[:TEST_LENGTH]
     test_outputs = signal[1:TEST_LENGTH + 1]

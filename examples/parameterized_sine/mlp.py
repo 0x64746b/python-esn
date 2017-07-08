@@ -14,13 +14,15 @@ import logging
 import hyperopt
 import hyperopt.mongoexp
 import numpy as np
-import pandas as pd
 
 from esn import MlpEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
 from esn.examples import EsnExample
-from esn.examples.parameterized_sine import SAMPLES_PER_PERIOD
+from esn.examples.parameterized_sine import (
+    NUM_TRAINING_SAMPLES,
+    SAMPLES_PER_PERIOD,
+)
 
 
 INPUT_NOISE_FACTOR = 0.03
@@ -31,60 +33,41 @@ logger = logging.getLogger(__name__)
 
 class MlpExample(EsnExample):
 
-    search_space = (
-        hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
-        hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-        hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
-        hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
-        hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-    )
+    def __init__(self, *data):
+        super(MlpExample, self).__init__(*data)
 
-    def __init__(
-            self,
-            training_inputs,
-            training_outputs,
-            test_inputs,
-            test_outputs
-    ):
         self.training_inputs = np.array(list(zip(
-            training_inputs[0],
-            add_noise(training_inputs[1], INPUT_NOISE_FACTOR)
+            self.training_inputs[0],
+            add_noise(self.training_inputs[1], INPUT_NOISE_FACTOR)
         )))
-        self.training_outputs = np.array(training_outputs).reshape(
-            len(training_outputs),
+        self.training_outputs = np.array(self.training_outputs).reshape(
+            len(self.training_outputs),
             1
         )
-        self.test_inputs = np.array(list(zip(*test_inputs)))
-        self.test_outputs = test_outputs
+        self.test_inputs = np.array(list(zip(*self.test_inputs)))
 
-    def run(self, output_file):
-        predicted_outputs = self._train(
-            spectral_radius=1.5,
-            leaking_rate=0.1,
-            bias_scale=2.6,
-            frequency_scale=2.2,
-            signal_scale=5.5,
+    def _configure(self):
+        super(MlpExample, self)._configure()
+
+        self.title = 'Parameterized sine; MLP; {} samples'.format(
+            NUM_TRAINING_SAMPLES
         )
+        self.periodicity = SAMPLES_PER_PERIOD
 
-        # debug
-        for i, predicted_date in enumerate([self.test_inputs[0][1]] + predicted_outputs[:-1]):
-            logger.debug(
-                '% f | % f -> % f (Δ % f)',
-                self.test_inputs[i][0],
-                predicted_date,
-                predicted_outputs[i],
-                self.test_outputs[i] - predicted_outputs[i]
-            )
+        self.hyper_parameters = {
+            'spectral_radius': 1.5,
+            'leaking_rate': 0.1,
+            'bias_scale': 2.6,
+            'frequency_scale': 2.2,
+            'signal_scale': 5.5,
+        }
 
-        self._plot_results(
-            data=pd.DataFrame({
-                'Frequencies': self.test_inputs[:, 0],
-                'Correct outputs': self.test_outputs,
-                'Predicted outputs': predicted_outputs,
-            }),
-            title='Generate with manual feedback',
-            periodicity=SAMPLES_PER_PERIOD,
-            output_file=output_file,
+        self.search_space = (
+            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
+            hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
+            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
 
     def _train(
@@ -140,4 +123,19 @@ class MlpExample(EsnExample):
                 np.array(S)
             )
 
-        return predicted_outputs
+        return np.array(predicted_outputs)
+
+    def _log_debug(self, predicted_outputs):
+        for i, predicted_date in enumerate([self.test_inputs[0][1]] + predicted_outputs[:-1]):
+            logger.debug(
+                '% f | % f -> % f (Δ % f)',
+                self.test_inputs[i][0],
+                predicted_date,
+                predicted_outputs[i],
+                self.test_outputs[i] - predicted_outputs[i]
+            )
+
+    def _get_plotting_data(self, predicted_outputs):
+        data = super(MlpExample, self)._get_plotting_data(predicted_outputs)
+        data['Frequencies'] = self.test_inputs[:, 0]
+        return data

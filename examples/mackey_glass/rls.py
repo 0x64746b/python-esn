@@ -13,11 +13,11 @@ import logging
 
 import hyperopt
 import numpy as np
-import pandas as pd
 
 from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import EsnExample
+from esn.examples.mackey_glass import NUM_TRAINING_SAMPLES
 
 
 logger = logging.getLogger(__name__)
@@ -25,56 +25,42 @@ logger = logging.getLogger(__name__)
 
 class RlsExample(EsnExample):
 
-    search_space = (
-        hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
-        hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
-        hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
-        hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
-        hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
-        hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-        hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
-        hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
-        hyperopt.hp.choice('squared_network_state', [False, True]),
-        hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
-        hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
-        hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-    )
+    def _configure(self):
+        super(RlsExample, self)._configure()
 
-    def run(self, output_file):
-        np.random.seed(1839385064)
-
-        predicted_outputs = self._train(
-            reservoir_size=3000,
-            spectral_radius=1.14,
-            leaking_rate=0.28,
-            sparsity=0.66,
-            initial_transients=5000,
-            state_noise=0.0047857,
-            squared_network_state=True,
-            activation_function=lecun,
-            bias_scale=0.88,
-            signal_scale=3.3,
+        self.title = 'Mackey-Glass; RLS; {} samples'.format(
+            NUM_TRAINING_SAMPLES
         )
 
-        # debug
-        for i, predicted_date in enumerate(np.concatenate((
-                [self.test_inputs[0]],
-                predicted_outputs[:-1])
-        )):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                predicted_date,
-                predicted_outputs[i],
-                self.test_outputs[i] - predicted_outputs[i]
-            )
+        self.random_seed = 1839385064
+        self.hyper_parameters = {
+            'reservoir_size': 3000,
+            'spectral_radius': 1.14,
+            'leaking_rate': 0.28,
+            'forgetting_factor': 0.99,
+            'autocorrelation_init': 0.1,
+            'sparsity': 0.66,
+            'initial_transients': 5000,
+            'state_noise': 0.0047857,
+            'squared_network_state': True,
+            'activation_function': lecun,
+            'bias_scale': 0.88,
+            'signal_scale': 3.3,
+        }
 
-        self._plot_results(
-            data=pd.DataFrame({
-                'Correct outputs': self.test_outputs,
-                'Predicted outputs': predicted_outputs.flatten(),
-            }),
-            title='Generate with manual feedback',
-            output_file=output_file,
+        self.search_space = (
+            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
+            hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
+            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
+            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
+            hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
+            hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
+            hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
+            hyperopt.hp.choice('squared_network_state', [False, True]),
+            hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
+            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
+            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
 
     def _train(
