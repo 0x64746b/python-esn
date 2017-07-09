@@ -18,7 +18,7 @@ from sklearn.metrics import mean_squared_error
 from esn.preprocessing import scale
 
 
-NUM_TRAINING_SAMPLES = 100000
+NUM_TRAINING_SAMPLES = 5000
 NUM_PREDICTION_SAMPLES = 500
 
 
@@ -48,4 +48,5 @@ def load_data(file_name):
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
+from .pseudoinverse import PseudoinverseExample
 from .rls import RlsExample

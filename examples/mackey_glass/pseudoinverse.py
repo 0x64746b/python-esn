@@ -1,6 +1,9 @@
 # coding: utf-8
 
-"""Train a recursive least squares filter to compute the output weights."""
+"""
+Invoke the pseudoinverse of the extended system states to compute the output
+weights.
+"""
 
 from __future__ import (
     absolute_import,
@@ -14,7 +17,7 @@ import logging
 import hyperopt
 import numpy as np
 
-from esn import RlsEsn
+from esn import Esn
 from esn.activation_functions import lecun
 from esn.examples import EsnExample
 from esn.examples.mackey_glass import NUM_TRAINING_SAMPLES
@@ -23,12 +26,12 @@ from esn.examples.mackey_glass import NUM_TRAINING_SAMPLES
 logger = logging.getLogger(__name__)
 
 
-class RlsExample(EsnExample):
+class PseudoinverseExample(EsnExample):
 
     def _configure(self):
-        super(RlsExample, self)._configure()
+        super(PseudoinverseExample, self)._configure()
 
-        self.title = 'Mackey-Glass; RLS; {} samples'.format(
+        self.title = 'Mackey-Glass; Pseudoinverse; {} samples'.format(
             NUM_TRAINING_SAMPLES
         )
 
@@ -37,8 +40,6 @@ class RlsExample(EsnExample):
             'reservoir_size': 3000,
             'spectral_radius': 1.14,
             'leaking_rate': 0.28,
-            'forgetting_factor': 0.99,
-            'autocorrelation_init': 0.1,
             'sparsity': 0.66,
             'initial_transients': 5000,
             'state_noise': 0.0047857,
@@ -52,8 +53,6 @@ class RlsExample(EsnExample):
             hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
-            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
-            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
             hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
@@ -68,8 +67,6 @@ class RlsExample(EsnExample):
             reservoir_size,
             spectral_radius,
             leaking_rate,
-            forgetting_factor,
-            autocorrelation_init,
             sparsity,
             initial_transients,
             state_noise,
@@ -79,14 +76,12 @@ class RlsExample(EsnExample):
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = RlsEsn(
+        self.esn = Esn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            forgetting_factor=forgetting_factor,
-            autocorrelation_init=autocorrelation_init,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,

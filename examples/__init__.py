@@ -269,8 +269,8 @@ def dispatch_examples():
     mackey_glass_group.add_argument(
         '-n',
         '--network-type',
-        choices=['rls'],
-        default='rls',
+        choices=['pinv', 'rls'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
     mackey_glass_group.add_argument(
@@ -315,7 +315,9 @@ def dispatch_examples():
         example_group = superposed_sinusoid
         data = example_group.load_data()
 
-    if args.network_type == 'rls':
+    if args.network_type == 'pinv':
+        example = example_group.PseudoinverseExample(*data)
+    elif args.network_type == 'rls':
         example = example_group.RlsExample(*data)
     elif args.network_type == 'mlp':
         example = example_group.MlpExample(*data)
