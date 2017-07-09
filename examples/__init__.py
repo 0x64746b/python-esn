@@ -282,8 +282,8 @@ def dispatch_examples():
     frequency_generator_group.add_argument(
         '-n',
         '--network-type',
-        choices=['mlp'],
-        default='mlp',
+        choices=['pinv', 'mlp'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
 

@@ -83,4 +83,5 @@ def load_data():
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
+from .pseudoinverse import PseudoinverseExample
 from .mlp import MlpExample

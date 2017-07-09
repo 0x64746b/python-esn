@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-Invoke the pseudoinverse of the extended system states to compute the output
+Use the pseudoinverse of the extended system states to compute the output
 weights.
 """
 
