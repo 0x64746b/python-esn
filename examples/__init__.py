@@ -137,9 +137,9 @@ class EsnExample(object):
                 extra.legend(
                     ['Unit {}'.format(unit) for unit in debug['test_activations']]
                 )
-                if periodicity:
+                if self.periodicity:
                     extra.xaxis.set_major_locator(ticker.MultipleLocator(
-                        periodicity
+                        self.periodicity
                     ))
             else:
                 extra.set_title('Output weights')
