@@ -213,7 +213,11 @@ class EsnExample(object):
 
 def dispatch_examples():
     """The main entry point."""
-    from esn.examples import mackey_glass, frequency_generator, superposed_sine
+    from esn.examples import (
+        mackey_glass,
+        frequency_generator,
+        superposed_sinusoid,
+    )
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -256,9 +260,9 @@ def dispatch_examples():
         'frequency-generator',
         help=frequency_generator.__doc__
     )
-    superposed_sine_group = example_groups.add_parser(
-        'superposed-sine',
-        help=superposed_sine.__doc__
+    superposed_sinusoid_group = example_groups.add_parser(
+        'superposed-sinusoid',
+        help=superposed_sinusoid.__doc__
     )
 
     #  mackey-glass examples (map to a module)
@@ -289,16 +293,16 @@ def dispatch_examples():
         help=frequency_generator.mlp.__doc__
     )
 
-    #  superposed sine examples (map to a module)
-    superposed_sine_examples = superposed_sine_group.add_subparsers(
+    #  superposed sinusoid examples (map to a module)
+    superposed_sinusoid_examples = superposed_sinusoid_group.add_subparsers(
         title='examples',
         dest='example'
     )
-    superposed_sine_examples.required = True
+    superposed_sinusoid_examples.required = True
 
-    superposed_sine_examples.add_parser(
+    superposed_sinusoid_examples.add_parser(
         'rls',
-        help=superposed_sine.rls.__doc__
+        help=superposed_sinusoid.rls.__doc__
     )
 
     args = parser.parse_args()
@@ -316,8 +320,8 @@ def dispatch_examples():
     elif args.example_group == 'frequency-generator':
         example_group = frequency_generator
         data = example_group.load_data()
-    elif args.example_group == 'superposed-sine':
-        example_group = superposed_sine
+    elif args.example_group == 'superposed-sinusoid':
+        example_group = superposed_sinusoid
         data = example_group.load_data()
 
     if args.example == 'rls':

@@ -26,7 +26,7 @@ setuptools.setup(
         'esn.examples',
         'esn.examples.mackey_glass',
         'esn.examples.frequency_generator',
-        'esn.examples.superposed_sine',
+        'esn.examples.superposed_sinusoid',
     ],
     package_dir={'esn.examples': 'examples'},
 
