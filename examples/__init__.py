@@ -213,7 +213,7 @@ class EsnExample(object):
 
 def dispatch_examples():
     """The main entry point."""
-    from esn.examples import mackey_glass, parameterized_sine, superposed_sine
+    from esn.examples import mackey_glass, frequency_generator, superposed_sine
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -252,9 +252,9 @@ def dispatch_examples():
         'mackey-glass',
         help=mackey_glass.__doc__
     )
-    parameterized_sine_group = example_groups.add_parser(
-        'parameterized-sine',
-        help=parameterized_sine.__doc__
+    frequency_generator_group = example_groups.add_parser(
+        'frequency-generator',
+        help=frequency_generator.__doc__
     )
     superposed_sine_group = example_groups.add_parser(
         'superposed-sine',
@@ -277,16 +277,16 @@ def dispatch_examples():
         help='the file containing the data to learn'
     )
 
-    #  parametrized sine examples (map to a module)
-    parameterized_sine_examples = parameterized_sine_group.add_subparsers(
+    #  frequency generator examples (map to a module)
+    frequency_generator_examples = frequency_generator_group.add_subparsers(
         title='examples',
         dest='example'
     )
-    parameterized_sine_examples.required = True
+    frequency_generator_examples.required = True
 
-    parameterized_sine_examples.add_parser(
+    frequency_generator_examples.add_parser(
         'mlp',
-        help=parameterized_sine.mlp.__doc__
+        help=frequency_generator.mlp.__doc__
     )
 
     #  superposed sine examples (map to a module)
@@ -313,8 +313,8 @@ def dispatch_examples():
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
         data = example_group.load_data(args.data_file)
-    elif args.example_group == 'parameterized-sine':
-        example_group = parameterized_sine
+    elif args.example_group == 'frequency-generator':
+        example_group = frequency_generator
         data = example_group.load_data()
     elif args.example_group == 'superposed-sine':
         example_group = superposed_sine

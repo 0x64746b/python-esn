@@ -1,6 +1,6 @@
 # coding: utf-8
 
-"""Learn a parameterized sine signal."""
+"""Learn a sine wave with changing frequency."""
 
 
 from __future__ import (
