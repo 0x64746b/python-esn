@@ -266,43 +266,34 @@ def dispatch_examples():
     )
 
     #  mackey-glass examples (map to a module)
-    mackey_glass_examples = mackey_glass_group.add_subparsers(
-        title='examples',
-        dest='example'
+    mackey_glass_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['rls'],
+        default='rls',
+        help='The type of network to train (default: %(default)s)'
     )
-    mackey_glass_examples.required = True
-
-    mackey_glass_rls = mackey_glass_examples.add_parser(
-        'rls',
-        help=mackey_glass.rls.__doc__
-    )
-    mackey_glass_rls.add_argument(
+    mackey_glass_group.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
     #  frequency generator examples (map to a module)
-    frequency_generator_examples = frequency_generator_group.add_subparsers(
-        title='examples',
-        dest='example'
-    )
-    frequency_generator_examples.required = True
-
-    frequency_generator_examples.add_parser(
-        'mlp',
-        help=frequency_generator.mlp.__doc__
+    frequency_generator_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['mlp'],
+        default='mlp',
+        help='The type of network to train (default: %(default)s)'
     )
 
     #  superposed sinusoid examples (map to a module)
-    superposed_sinusoid_examples = superposed_sinusoid_group.add_subparsers(
-        title='examples',
-        dest='example'
-    )
-    superposed_sinusoid_examples.required = True
-
-    superposed_sinusoid_examples.add_parser(
-        'rls',
-        help=superposed_sinusoid.rls.__doc__
+    superposed_sinusoid_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['rls'],
+        default='rls',
+        help='The type of network to train (default: %(default)s)'
     )
 
     args = parser.parse_args()
@@ -324,12 +315,12 @@ def dispatch_examples():
         example_group = superposed_sinusoid
         data = example_group.load_data()
 
-    if args.example == 'rls':
+    if args.network_type == 'rls':
         example = example_group.RlsExample(*data)
-    elif args.example == 'mlp':
+    elif args.network_type == 'mlp':
         example = example_group.MlpExample(*data)
 
-    if 'optimize' in args and args.optimize:
+    if args.optimize:
         example.optimize(args.optimize)
     else:
         example.run(args.output_file)
