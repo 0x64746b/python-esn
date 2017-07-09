@@ -291,8 +291,8 @@ def dispatch_examples():
     superposed_sinusoid_group.add_argument(
         '-n',
         '--network-type',
-        choices=['rls'],
-        default='rls',
+        choices=['pinv', 'rls'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
 
