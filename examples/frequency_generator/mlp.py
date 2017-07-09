@@ -1,6 +1,8 @@
 # coding: utf-8
 
-"""Train an ESN prepended to a multilayer perceptron."""
+"""
+Use the extended system states of an ESN as inputs to a multilayer perceptron.
+"""
 
 from __future__ import (
     absolute_import,
@@ -19,7 +21,7 @@ from esn import MlpEsn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
 from esn.examples import EsnExample
-from esn.examples.parameterized_sine import (
+from esn.examples.frequency_generator import (
     NUM_TRAINING_SAMPLES,
     SAMPLES_PER_PERIOD,
 )

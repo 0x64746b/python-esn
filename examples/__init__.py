@@ -213,7 +213,11 @@ class EsnExample(object):
 
 def dispatch_examples():
     """The main entry point."""
-    from esn.examples import mackey_glass, parameterized_sine, superposed_sine
+    from esn.examples import (
+        mackey_glass,
+        frequency_generator,
+        superposed_sinusoid,
+    )
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -252,53 +256,44 @@ def dispatch_examples():
         'mackey-glass',
         help=mackey_glass.__doc__
     )
-    parameterized_sine_group = example_groups.add_parser(
-        'parameterized-sine',
-        help=parameterized_sine.__doc__
+    frequency_generator_group = example_groups.add_parser(
+        'frequency-generator',
+        help=frequency_generator.__doc__
     )
-    superposed_sine_group = example_groups.add_parser(
-        'superposed-sine',
-        help=superposed_sine.__doc__
+    superposed_sinusoid_group = example_groups.add_parser(
+        'superposed-sinusoid',
+        help=superposed_sinusoid.__doc__
     )
 
     #  mackey-glass examples (map to a module)
-    mackey_glass_examples = mackey_glass_group.add_subparsers(
-        title='examples',
-        dest='example'
+    mackey_glass_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['rls'],
+        default='rls',
+        help='The type of network to train (default: %(default)s)'
     )
-    mackey_glass_examples.required = True
-
-    mackey_glass_rls = mackey_glass_examples.add_parser(
-        'rls',
-        help=mackey_glass.rls.__doc__
-    )
-    mackey_glass_rls.add_argument(
+    mackey_glass_group.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
 
-    #  parametrized sine examples (map to a module)
-    parameterized_sine_examples = parameterized_sine_group.add_subparsers(
-        title='examples',
-        dest='example'
-    )
-    parameterized_sine_examples.required = True
-
-    parameterized_sine_examples.add_parser(
-        'mlp',
-        help=parameterized_sine.mlp.__doc__
+    #  frequency generator examples (map to a module)
+    frequency_generator_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['mlp'],
+        default='mlp',
+        help='The type of network to train (default: %(default)s)'
     )
 
-    #  superposed sine examples (map to a module)
-    superposed_sine_examples = superposed_sine_group.add_subparsers(
-        title='examples',
-        dest='example'
-    )
-    superposed_sine_examples.required = True
-
-    superposed_sine_examples.add_parser(
-        'rls',
-        help=superposed_sine.rls.__doc__
+    #  superposed sinusoid examples (map to a module)
+    superposed_sinusoid_group.add_argument(
+        '-n',
+        '--network-type',
+        choices=['rls'],
+        default='rls',
+        help='The type of network to train (default: %(default)s)'
     )
 
     args = parser.parse_args()
@@ -313,19 +308,19 @@ def dispatch_examples():
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
         data = example_group.load_data(args.data_file)
-    elif args.example_group == 'parameterized-sine':
-        example_group = parameterized_sine
+    elif args.example_group == 'frequency-generator':
+        example_group = frequency_generator
         data = example_group.load_data()
-    elif args.example_group == 'superposed-sine':
-        example_group = superposed_sine
+    elif args.example_group == 'superposed-sinusoid':
+        example_group = superposed_sinusoid
         data = example_group.load_data()
 
-    if args.example == 'rls':
+    if args.network_type == 'rls':
         example = example_group.RlsExample(*data)
-    elif args.example == 'mlp':
+    elif args.network_type == 'mlp':
         example = example_group.MlpExample(*data)
 
-    if 'optimize' in args and args.optimize:
+    if args.optimize:
         example.optimize(args.optimize)
     else:
         example.run(args.output_file)

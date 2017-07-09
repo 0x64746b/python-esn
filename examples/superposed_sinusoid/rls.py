@@ -19,7 +19,7 @@ import numpy as np
 from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import EsnExample
-from esn.examples.superposed_sine import TRAINING_LENGTH
+from esn.examples.superposed_sinusoid import TRAINING_LENGTH
 from esn.preprocessing import add_noise
 
 
