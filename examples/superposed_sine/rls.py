@@ -15,12 +15,12 @@ import logging
 import hyperopt
 import hyperopt.mongoexp
 import numpy as np
-import pandas as pd
 
 from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import EsnExample
-from esn.preprocessing import add_noise, scale
+from esn.examples.superposed_sine import TRAINING_LENGTH
+from esn.preprocessing import add_noise
 
 
 logger = logging.getLogger(__name__)
@@ -34,35 +34,31 @@ class RlsExample(EsnExample):
         # remove every other label
         self.training_outputs[1::2] = np.nan
 
+    def _configure(self):
+        super(RlsExample, self)._configure()
 
-    def run(self, output_file):
-        predicted_outputs = self._train(
-            spectral_radius=1.11,
-            leaking_rate=0.75,
-            forgetting_factor=0.99998,
-            autocorrelation_init=0.1,
-            bias_scale=-0.4,
-            signal_scale=1.2,
-            state_noise=0.004,
-            input_noise=0.007,
-        )
+        self.title = 'Superposed sine; RLS; {} samples'.format(TRAINING_LENGTH)
 
-        # debug
-        for i, predicted_date in enumerate([self.test_inputs[0]] + predicted_outputs[:-1]):
-            logger.debug(
-                '% f -> % f (Δ % f)',
-                predicted_date,
-                predicted_outputs[i],
-                self.test_outputs[i] - predicted_outputs[i]
-            )
+        self.hyper_parameters = {
+            'spectral_radius': 1.11,
+            'leaking_rate': 0.75,
+            'forgetting_factor': 0.99998,
+            'autocorrelation_init': 0.1,
+            'bias_scale': -0.4,
+            'signal_scale': 1.2,
+            'state_noise': 0.004,
+            'input_noise': 0.007,
+        }
 
-        self._plot_results(
-            data=pd.DataFrame({
-                'Correct outputs': self.test_outputs,
-                'Predicted outputs': predicted_outputs.flatten(),
-            }),
-            title='Generate simple signal',
-            output_file=output_file,
+        self.search_space = (
+            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
+            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
+            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
+            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
+            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
+            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
+            hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
         )
 
     def _train(
@@ -116,30 +112,3 @@ class RlsExample(EsnExample):
             predicted_outputs.append(self.esn.predict(predicted_outputs[i]))
 
         return np.array(predicted_outputs)
-
-    def optimize(self, exp_key):
-        search_space = (
-            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
-            hyperopt.hp.quniform('leaking_rate', 0, 1, 0.01),
-            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
-            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
-            hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
-            hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
-            hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
-            hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
-        )
-
-        trials = hyperopt.mongoexp.MongoTrials(
-            'mongo://localhost:27017/python_esn_trials/jobs',
-            exp_key=exp_key,
-        )
-
-        best = hyperopt.fmin(
-            self._objective,
-            space=search_space,
-            algo=hyperopt.tpe.suggest,
-            max_evals=150,
-            trials=trials,
-        )
-
-        logger.info('Best parameter combination: %s', best)

@@ -16,6 +16,7 @@ import hyperopt
 from matplotlib import pyplot as plt, ticker
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 from timeit import default_timer as timer
 
@@ -38,14 +39,49 @@ class EsnExample(object):
         self.test_inputs = test_inputs
         self.test_outputs = test_outputs
 
-    def _plot_results(
-            self,
-            data,
-            title,
-            debug=None,
-            periodicity=None,
-            output_file=None
-    ):
+        self._configure()
+
+    def _configure(self):
+        self.title = ''
+        self.periodicity = None
+
+        self.random_seed = 42
+        self.hyper_parameters = {}
+
+        self.search_space = ()
+
+    def run(self, output_file):
+        np.random.seed(self.random_seed)
+
+        predicted_outputs = self._train(**self.hyper_parameters)
+
+        # debug
+        self._log_debug(predicted_outputs)
+
+        self._plot_results(
+            data=self._get_plotting_data(predicted_outputs),
+            output_file=output_file
+        )
+
+    def _log_debug(self, predicted_outputs):
+        for i, predicted_date in enumerate(np.concatenate((
+                [self.test_inputs[0]],
+                predicted_outputs[:-1])
+        )):
+            logger.debug(
+                '% f -> % f (Δ % f)',
+                predicted_date,
+                predicted_outputs[i],
+                self.test_outputs[i] - predicted_outputs[i]
+            )
+
+    def _get_plotting_data(self, predicted_outputs):
+        return {
+            'Correct outputs': self.test_outputs.flatten(),
+            'Predicted outputs': predicted_outputs.flatten(),
+        }
+
+    def _plot_results(self, data, debug=None, output_file=None):
         plt.style.use('ggplot')
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
@@ -57,10 +93,12 @@ class EsnExample(object):
         else:
             fig, (main, training_activations, extra) = plt.subplots(nrows=3)
 
-        main.set_title(title)
-        data.plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
-        if periodicity:
-            main.xaxis.set_major_locator(ticker.MultipleLocator(periodicity))
+        main.set_title(self.title)
+        pd.DataFrame(data).plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
+        if self.periodicity:
+            main.xaxis.set_major_locator(
+                ticker.MultipleLocator(self.periodicity)
+            )
 
         try:
             rmse = np.sqrt(mean_squared_error(
@@ -119,6 +157,22 @@ class EsnExample(object):
             plt.savefig(output_file, dpi=100)
         else:
             plt.show()
+
+    def optimize(self, exp_key):
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
+
+        best = hyperopt.fmin(
+            self._objective,
+            space=self.search_space,
+            algo=hyperopt.tpe.suggest,
+            max_evals=1000,
+            trials=trials,
+        )
+
+        logger.info('Best parameter combination: %s', best)
 
     def _objective(self, hyper_parameters):
         start = timer()
