@@ -224,12 +224,21 @@ def dispatch_examples():
         default=0,
         help='Increase the log level with each use'
     )
-    parser.add_argument(
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
         '-s',
         '--save',
         metavar='FILE',
         dest='output_file',
-        help='save the generated plot to the given file instead of showing it'
+        help='Run the experiment but save the generated plot to the given file'
+             ' instead of showing it'
+    )
+    mode_group.add_argument(
+        '-o',
+        '--optimize',
+        metavar='EXP_KEY',
+        help='Optimize the hyper-parameters of the example'
+             ' instead of running it'
     )
 
     # example groups (map to a package)
@@ -264,12 +273,6 @@ def dispatch_examples():
         help=mackey_glass.rls.__doc__
     )
     mackey_glass_rls.add_argument(
-        '-o',
-        '--optimize',
-        metavar='EXP_KEY',
-        help='Optimize the hyperparameters of the example instead of running it %(default)s'
-    )
-    mackey_glass_rls.add_argument(
         'data_file',
         help='the file containing the data to learn'
     )
@@ -281,15 +284,9 @@ def dispatch_examples():
     )
     parameterized_sine_examples.required = True
 
-    parameterized_sine_mlp = parameterized_sine_examples.add_parser(
+    parameterized_sine_examples.add_parser(
         'mlp',
         help=parameterized_sine.mlp.__doc__
-    )
-    parameterized_sine_mlp.add_argument(
-        '-o',
-        '--optimize',
-        metavar='EXP_KEY',
-        help='Optimize the hyperparameters of the example instead of running it'
     )
 
     #  superposed sine examples (map to a module)
@@ -299,15 +296,9 @@ def dispatch_examples():
     )
     superposed_sine_examples.required = True
 
-    superposed_sine_rls = superposed_sine_examples.add_parser(
+    superposed_sine_examples.add_parser(
         'rls',
         help=superposed_sine.rls.__doc__
-    )
-    superposed_sine_rls.add_argument(
-        '-o',
-        '--optimize',
-        metavar='EXP_KEY',
-        help='Optimize the hyperparameters of the example instead of running it'
     )
 
     args = parser.parse_args()
@@ -316,8 +307,8 @@ def dispatch_examples():
         level=max(logging.DEBUG, logging.WARNING - args.verbosity * 10)
     )
 
-    # explicitly seed PRNG for comparable runs
-    np.random.seed(48)
+    # explicitly seed PRNG for reproducible data generation
+    np.random.seed(42)
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
