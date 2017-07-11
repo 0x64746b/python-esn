@@ -121,6 +121,8 @@ class PseudoinverseExample(EsnExample):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
+        self.esn.reset_state()
+
         S = [np.hstack((
             self.esn.BIAS,
             self.test_inputs[0],

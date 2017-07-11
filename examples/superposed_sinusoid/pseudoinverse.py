@@ -91,6 +91,8 @@ class PseudoinverseExample(EsnExample):
         self.esn.fit(self.training_inputs, self.training_outputs)
 
         # test
+        self.esn.reset_state()
+
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
         for i in range(len(self.test_inputs)-1):
             predicted_outputs.append(self.esn.predict(predicted_outputs[i]))

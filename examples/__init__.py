@@ -102,8 +102,8 @@ class EsnExample(object):
 
         try:
             rmse = np.sqrt(mean_squared_error(
-                data['Correct outputs'],
-                data['Predicted outputs']
+                data['Correct outputs'][self.esn.washout:],
+                data['Predicted outputs'][self.esn.washout:]
             ))
         except ValueError as error:
             rmse = error
@@ -188,8 +188,8 @@ class EsnExample(object):
         else:
             try:
                 rmse = np.sqrt(mean_squared_error(
-                    self.test_outputs,
-                    predicted_outputs
+                    self.test_outputs[self.esn.washout:],
+                    predicted_outputs[self.esn.washout:]
                 ))
             except Exception as error:
                 result = {'status': hyperopt.STATUS_FAIL, 'problem': str(error)}
