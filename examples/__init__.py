@@ -100,6 +100,9 @@ class EsnExample(object):
                 ticker.MultipleLocator(self.periodicity)
             )
 
+        # indicate washout of test data
+        plt.axvspan(0, self.esn.washout, color='0.75', alpha=0.5)
+
         try:
             rmse = np.sqrt(mean_squared_error(
                 data['Correct outputs'][self.esn.washout:],
