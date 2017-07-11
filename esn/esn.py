@@ -238,6 +238,9 @@ class Esn(object):
 
         return {unit: S[:, unit] for unit in tracked_units}
 
+    def reset_state(self):
+        self.x = np.zeros(self.N)
+
     def predict(self, input_date):
         u = self._prepend_bias(input_date)
 
