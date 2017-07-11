@@ -48,5 +48,6 @@ def load_data(file_name):
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
+from .lms import LmsExample
 from .pseudoinverse import PseudoinverseExample
 from .rls import RlsExample

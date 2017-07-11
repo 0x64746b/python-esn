@@ -270,7 +270,7 @@ def dispatch_examples():
         '-n',
         '--network-type',
         metavar='TYPE',
-        choices=['pinv', 'rls'],
+        choices=['pinv', 'lms', 'rls'],
         default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
@@ -320,6 +320,8 @@ def dispatch_examples():
 
     if args.network_type == 'pinv':
         example = example_group.PseudoinverseExample(*data)
+    elif args.network_type == 'lms':
+        example = example_group.LmsExample(*data)
     elif args.network_type == 'rls':
         example = example_group.RlsExample(*data)
     elif args.network_type == 'mlp':
