@@ -269,6 +269,7 @@ def dispatch_examples():
     mackey_glass_group.add_argument(
         '-n',
         '--network-type',
+        metavar='TYPE',
         choices=['pinv', 'rls'],
         default='pinv',
         help='The type of network to train (default: %(default)s)'
@@ -282,6 +283,7 @@ def dispatch_examples():
     frequency_generator_group.add_argument(
         '-n',
         '--network-type',
+        metavar='TYPE',
         choices=['pinv', 'mlp'],
         default='pinv',
         help='The type of network to train (default: %(default)s)'
@@ -291,6 +293,7 @@ def dispatch_examples():
     superposed_sinusoid_group.add_argument(
         '-n',
         '--network-type',
+        metavar='TYPE',
         choices=['pinv', 'rls'],
         default='pinv',
         help='The type of network to train (default: %(default)s)'
