@@ -73,6 +73,11 @@ class MlpExample(EsnExample):
             'signal_scale': 5.5,
         }
 
+        self.search_space_choices.update({
+            'mlp_activation_function': ['identity', 'logistic', 'tanh', 'relu'],
+            'mlp_solver': ['lbfgs', 'sgd', 'adam'],
+        })
+
         self.search_space = (
             hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
@@ -80,11 +85,11 @@ class MlpExample(EsnExample):
             hyperopt.hp.quniform('sparsity', 0, 0.99, 0.1),
             hyperopt.hp.quniform('initial_transients', 1000, 15001, 1000),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-3, 1e-7),
-            hyperopt.hp.choice('squared_network_state', [False, True]),
-            hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
+            hyperopt.hp.choice(*self._build_choice('squared_network_state')),
+            hyperopt.hp.choice(*self._build_choice('activation_function')),
             hyperopt.hp.quniform('mlp_hidden_layer_size', 50, 501, 50),
-            hyperopt.hp.choice('mlp_activation_function', ['identity', 'logistic', 'tanh', 'relu']),
-            hyperopt.hp.choice('mlp_solver', ['lbfgs', 'sgd', 'adam']),
+            hyperopt.hp.choice(*self._build_choice('mlp_activation_function')),
+            hyperopt.hp.choice(*self._build_choice('mlp_solver')),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.01),

@@ -11,6 +11,7 @@ from __future__ import (
 
 import argparse
 import logging
+import pprint
 
 import hyperopt
 from matplotlib import pyplot as plt, ticker
@@ -19,6 +20,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 from timeit import default_timer as timer
+
+from esn.activation_functions import lecun
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +52,10 @@ class EsnExample(object):
         self.hyper_parameters = {}
 
         self.search_space = ()
+        self.search_space_choices = {
+            'squared_network_state': [False, True],
+            'activation_function': [np.tanh, lecun],
+        }
 
     def run(self, output_file):
         np.random.seed(self.random_seed)
@@ -210,6 +217,73 @@ class EsnExample(object):
 
             return result
 
+    def cross_validate(self, exp_key):
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
+
+        best_trials = sorted(
+            filter(lambda t: t['result']['status'] == 'ok', trials.trials),
+            key=lambda t: t['result']['loss']
+        )
+
+        trial_num = 0
+        for trial in best_trials:
+            trial_num += 1
+
+            # unpack and resolve hyper-parameter value lists
+            hyper_parameters = trial['misc']['vals'].copy()
+            for parameter, value in hyper_parameters.items():
+                hyper_parameters[parameter] = self._resolve_choice(
+                    parameter,
+                    value[0]
+                )
+
+            np.random.seed(int(trial['result']['seed']))
+
+            try:
+                predicted_outputs = self._train(**hyper_parameters)
+                cross_validation_error = np.sqrt(mean_squared_error(
+                    self.test_outputs,
+                    predicted_outputs
+                ))
+            except Exception as error:
+                logger.error('solution %d: %s', trial_num, error)
+                continue
+
+            optimization_error = trial['result']['loss']
+
+            logger.info(
+                'solution %d: optimization vs cross-validation error: %f vs %f',
+                trial_num,
+                optimization_error,
+                cross_validation_error,
+            )
+
+            if cross_validation_error <= (optimization_error * 1.05):
+                break
+
+        print(
+            'Suggested hyper-parameters (solution {}, id {}):\n'
+            '  seed: {}\n'
+            '  {}'.format(
+                trial_num,
+                trial['_id'],
+                trial['result']['seed'],
+                pprint.pformat(hyper_parameters),
+            )
+        )
+
+    def _build_choice(self, label):
+        return [label, self.search_space_choices[label]]
+
+    def _resolve_choice(self, label, value):
+        if label in self.search_space_choices:
+            return self.search_space_choices[label][value]
+        else:
+            return value
+
 
 def dispatch_examples():
     """The main entry point."""
@@ -243,6 +317,13 @@ def dispatch_examples():
         metavar='EXP_KEY',
         help='Optimize the hyper-parameters of the example'
              ' instead of running it'
+    )
+    mode_group.add_argument(
+        '-c',
+        '--cross-validate',
+        metavar='EXP_KEY',
+        help='Suggest a set of hyper-parameters from the given experiment'
+             ' by cross-validating them'
     )
 
     # example groups (map to a package)
@@ -310,12 +391,18 @@ def dispatch_examples():
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
+        if args.evaluate:
+            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_PREDICTION_SAMPLES
         data = example_group.load_data(args.data_file)
     elif args.example_group == 'frequency-generator':
         example_group = frequency_generator
+        if args.evaluate:
+            example_group.SIGNAL_LENGTH += 4500
         data = example_group.load_data()
     elif args.example_group == 'superposed-sinusoid':
         example_group = superposed_sinusoid
+        if args.evaluate:
+            example_group.TRAINING_LENGTH += example_group.TEST_LENGTH
         data = example_group.load_data()
 
     if args.network_type == 'pinv':
@@ -329,5 +416,7 @@ def dispatch_examples():
 
     if args.optimize:
         example.optimize(args.optimize)
+    elif args.cross_validate:
+        example.cross_validate(args.cross_validate)
     else:
         example.run(args.output_file)

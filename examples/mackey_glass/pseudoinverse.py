@@ -56,8 +56,8 @@ class PseudoinverseExample(EsnExample):
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
             hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
-            hyperopt.hp.choice('squared_network_state', [False, True]),
-            hyperopt.hp.choice('activation_function', [np.tanh, lecun]),
+            hyperopt.hp.choice(*self._build_choice('squared_network_state')),
+            hyperopt.hp.choice(*self._build_choice('activation_function')),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
