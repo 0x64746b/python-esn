@@ -19,7 +19,7 @@ import numpy as np
 from esn import RlsEsn
 from esn.activation_functions import lecun
 from esn.examples import EsnExample
-from esn.examples.superposed_sinusoid import TRAINING_LENGTH
+from esn.examples.superposed_sinusoid import NUM_TRAINING_SAMPLES
 from esn.preprocessing import add_noise
 
 
@@ -37,7 +37,7 @@ class RlsExample(EsnExample):
     def _configure(self):
         super(RlsExample, self)._configure()
 
-        self.title = 'Superposed sine; RLS; {} samples'.format(TRAINING_LENGTH)
+        self.title = 'Superposed sine; RLS; {} samples'.format(NUM_TRAINING_SAMPLES)
 
         self.hyper_parameters = {
             'spectral_radius': 1.11,

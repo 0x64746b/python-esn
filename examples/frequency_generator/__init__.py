@@ -15,17 +15,19 @@ import numpy as np
 from esn.preprocessing import scale
 
 
-FREQUENCY_PERIOD_AVG_LENGTH = 200
-SIGNAL_LENGTH = 75000
+NUM_PERIODS = 100
 SAMPLES_PER_PERIOD = 300  # without endpoint
-NUM_TRAINING_SAMPLES = SIGNAL_LENGTH - 4500
+NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLES_PER_PERIOD
+
 MAX_FREQUENCY = 5
+
+NUM_TRAINING_SAMPLES = SAMPLES_PER_PERIOD * 30
+NUM_TEST_SAMPLES = SAMPLES_PER_PERIOD * 15
 
 
 def generate_signal(
         num_sampling_points,
         samples_per_period,
-        num_frequency_changes,
         max_frequency,
 ):
     """
@@ -40,7 +42,11 @@ def generate_signal(
 
     frequency_intervals = np.sort(np.append(
         [0, num_sampling_points],
-        np.random.randint(0, num_sampling_points, num_frequency_changes)
+        np.random.randint(
+            0,
+            num_sampling_points,
+            int(num_sampling_points/samples_per_period)
+        )
     ))
 
     for (start, end) in zip(frequency_intervals, frequency_intervals[1:]):
@@ -56,9 +62,8 @@ def generate_signal(
 
 def load_data():
     frequencies, signal = generate_signal(
-        SIGNAL_LENGTH,
+        NUM_SAMPLING_POINTS,
         SAMPLES_PER_PERIOD,
-        int(SIGNAL_LENGTH / FREQUENCY_PERIOD_AVG_LENGTH),
         MAX_FREQUENCY,
     )
 
@@ -75,8 +80,11 @@ def load_data():
     frequencies = np.delete(frequencies, np.s_[:NUM_TRAINING_SAMPLES])
     signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = (frequencies[:-1], signal[:-1])
-    correct_outputs = signal[1:]
+    inputs = (
+        frequencies[:NUM_TEST_SAMPLES],
+        signal[:NUM_TEST_SAMPLES]
+    )
+    correct_outputs = signal[1:NUM_TEST_SAMPLES + 1]
 
     return training_inputs, training_outputs, inputs, correct_outputs
 

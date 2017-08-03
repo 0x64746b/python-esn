@@ -19,7 +19,7 @@ from esn.preprocessing import scale
 
 
 NUM_TRAINING_SAMPLES = 5000
-NUM_PREDICTION_SAMPLES = 500
+NUM_TEST_SAMPLES = 500
 
 
 def load_data(file_name):
@@ -40,8 +40,8 @@ def load_data(file_name):
     # consume training data
     data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
 
-    inputs = data[:NUM_PREDICTION_SAMPLES].reshape(NUM_PREDICTION_SAMPLES, 1)
-    correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
+    inputs = data[:NUM_TEST_SAMPLES].reshape(NUM_TEST_SAMPLES, 1)
+    correct_outputs = data[1:NUM_TEST_SAMPLES + 1]
 
     return training_inputs, training_outputs, inputs, correct_outputs
 

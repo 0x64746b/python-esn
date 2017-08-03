@@ -391,18 +391,18 @@ def dispatch_examples():
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
-        if args.evaluate:
-            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_PREDICTION_SAMPLES
+        if args.cross_validate:
+            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
         data = example_group.load_data(args.data_file)
     elif args.example_group == 'frequency-generator':
         example_group = frequency_generator
-        if args.evaluate:
-            example_group.SIGNAL_LENGTH += 4500
+        if args.cross_validate:
+            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
         data = example_group.load_data()
     elif args.example_group == 'superposed-sinusoid':
         example_group = superposed_sinusoid
-        if args.evaluate:
-            example_group.TRAINING_LENGTH += example_group.TEST_LENGTH
+        if args.cross_validate:
+            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
         data = example_group.load_data()
 
     if args.network_type == 'pinv':

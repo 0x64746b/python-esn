@@ -15,12 +15,12 @@ import numpy as np
 from esn.preprocessing import scale
 
 
-NUM_PERIODS = 1000
-SAMPLING_RATE = 50  # points per period
-NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLING_RATE
+NUM_PERIODS = 100
+SAMPLES_PER_PERIOD = 300  # without endpoint
+NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLES_PER_PERIOD
 
-TRAINING_LENGTH = int(NUM_SAMPLING_POINTS * 0.7)
-TEST_LENGTH = 500
+NUM_TRAINING_SAMPLES = SAMPLES_PER_PERIOD * 30
+NUM_TEST_SAMPLES = SAMPLES_PER_PERIOD * 2
 
 
 def load_data():
@@ -39,14 +39,14 @@ def load_data():
         + np.cos(5 * sampling_points)
     ).reshape(NUM_SAMPLING_POINTS, 1)
 
-    training_inputs = signal[:TRAINING_LENGTH]
-    training_outputs = signal[1:TRAINING_LENGTH + 1].copy()
+    training_inputs = signal[:NUM_TRAINING_SAMPLES]
+    training_outputs = signal[1:NUM_TRAINING_SAMPLES + 1].copy()
 
     # consume training data
-    signal = np.delete(signal, np.s_[:TRAINING_LENGTH], axis=0)
+    signal = np.delete(signal, np.s_[:NUM_TRAINING_SAMPLES], axis=0)
 
-    test_inputs = signal[:TEST_LENGTH]
-    test_outputs = signal[1:TEST_LENGTH + 1]
+    test_inputs = signal[:NUM_TEST_SAMPLES]
+    test_outputs = signal[1:NUM_TEST_SAMPLES + 1]
 
     return training_inputs, training_outputs, test_inputs, test_outputs
 
