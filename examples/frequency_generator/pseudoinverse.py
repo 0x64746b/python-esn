@@ -42,26 +42,27 @@ class PseudoinverseExample(FrequencyGeneratorExample):
             self.num_training_samples
         )
 
+        self.random_seed = 3570159704
         self.hyper_parameters = {
-            'reservoir_size': 1000,
-            'spectral_radius': 1.5,
-            'leaking_rate': 0.1,
-            'sparsity': 0.95,
-            'initial_transients': 1000,
-            'state_noise': 1e-5,
+            'reservoir_size': 100,
+            'spectral_radius': 0.27,
+            'leaking_rate': 0.08,
+            'sparsity': 0.2,
+            'initial_transients': 200,
+            'state_noise': 0.0002802,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 2.6,
-            'frequency_scale': 2.2,
-            'signal_scale': 5.5,
+            'bias_scale': -0.16,
+            'frequency_scale': 0.5,
+            'signal_scale': 2.36,
         }
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('reservoir_size', 100, 101, 10),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0, 0.99, 0.1),
-            hyperopt.hp.quniform('initial_transients', 1000, 15001, 1000),
+            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-3, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
