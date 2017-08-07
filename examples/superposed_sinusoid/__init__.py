@@ -23,7 +23,7 @@ NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLES_PER_PERIOD
 
 class SuperposedSinusoidExample(EsnExample):
 
-    def _load_data(self):
+    def _load_data(self, offset=False):
         sampling_points = np.linspace(
             0,
             NUM_PERIODS * 2 * np.pi,
@@ -38,6 +38,11 @@ class SuperposedSinusoidExample(EsnExample):
             + np.cos(4 * sampling_points)
             + np.cos(5 * sampling_points)
         ).reshape(NUM_SAMPLING_POINTS, 1)
+
+        if offset:
+            # start with a fresh set of data
+            wasted = self.num_training_samples + self.num_test_samples
+            signal = np.delete(signal, np.s_[:wasted], axis=0)
 
         self.training_inputs = signal[:self.num_training_samples]
         self.training_outputs = signal[1:self.num_training_samples + 1].copy()

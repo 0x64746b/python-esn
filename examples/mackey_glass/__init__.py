@@ -22,8 +22,13 @@ class MackeyGlassExample(EsnExample):
         self._data_file = data_file
         super(MackeyGlassExample, self).__init__()
 
-    def _load_data(self):
+    def _load_data(self, offset=False):
         data = np.loadtxt(self._data_file)
+
+        if offset:
+            # start with a fresh set of data
+            wasted = self.num_training_samples + self.num_test_samples
+            data = np.delete(data, np.s_[:wasted])
 
         # scale data to stretch to [-1, 1]
         data = scale(data)

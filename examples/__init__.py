@@ -220,6 +220,9 @@ class EsnExample(object):
             key=lambda t: t['result']['loss']
         )
 
+        # load fresh data
+        self._load_data(offset=True)
+
         trial_num = 0
         for trial in best_trials:
             trial_num += 1
