@@ -38,25 +38,26 @@ class PseudoinverseExample(SuperposedSinusoidExample):
             self.num_training_samples
         )
 
+        self.random_seed = 4137605587
         self.hyper_parameters = {
-            'reservoir_size': 3000,
-            'spectral_radius': 1.11,
-            'leaking_rate': 0.75,
-            'sparsity': 0.95,
-            'initial_transients': 1000,
-            'state_noise': 1e-5,
+            'reservoir_size': 200,
+            'spectral_radius': 1.13,
+            'leaking_rate': 0.05,
+            'sparsity': 0.92,
+            'initial_transients': 500,
+            'state_noise': 0.0000316,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': -0.4,
-            'signal_scale': 1.2,
+            'bias_scale': 0.6,
+            'signal_scale': 0.9,
         }
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('reservoir_size', 200, 201, 10),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
+            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
