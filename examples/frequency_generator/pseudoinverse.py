@@ -21,11 +21,7 @@ import numpy as np
 from esn import Esn
 from esn.activation_functions import lecun
 from esn.preprocessing import add_noise
-from esn.examples import EsnExample
-from esn.examples.frequency_generator import (
-    NUM_TRAINING_SAMPLES,
-    SAMPLES_PER_PERIOD,
-)
+from . import FrequencyGeneratorExample
 
 
 INPUT_NOISE_FACTOR = 0.03
@@ -34,28 +30,17 @@ INPUT_NOISE_FACTOR = 0.03
 logger = logging.getLogger(__name__)
 
 
-class PseudoinverseExample(EsnExample):
-
-    def __init__(self, *data):
-        super(PseudoinverseExample, self).__init__(*data)
-
-        self.training_inputs = np.array(list(zip(
-            self.training_inputs[0],
-            add_noise(self.training_inputs[1], INPUT_NOISE_FACTOR)
-        )))
-        self.training_outputs = np.array(self.training_outputs).reshape(
-            len(self.training_outputs),
-            1
-        )
-        self.test_inputs = np.array(list(zip(*self.test_inputs)))
+class PseudoinverseExample(FrequencyGeneratorExample):
 
     def _configure(self):
         super(PseudoinverseExample, self)._configure()
 
-        self.title = 'Parameterized sine; Pseudoinverse; {} samples'.format(
-            NUM_TRAINING_SAMPLES
+        self.num_training_samples = 10000
+        self.num_test_samples = 5000
+
+        self.title = 'Frequency generator; Pseudoinverse; {} samples'.format(
+            self.num_training_samples
         )
-        self.periodicity = SAMPLES_PER_PERIOD
 
         self.hyper_parameters = {
             'reservoir_size': 1000,

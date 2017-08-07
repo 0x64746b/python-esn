@@ -20,19 +20,23 @@ import numpy as np
 
 from esn import Esn
 from esn.activation_functions import lecun
-from esn.examples import EsnExample
-from esn.examples.superposed_sinusoid import NUM_TRAINING_SAMPLES
+from . import SuperposedSinusoidExample
 
 
 logger = logging.getLogger(__name__)
 
 
-class PseudoinverseExample(EsnExample):
+class PseudoinverseExample(SuperposedSinusoidExample):
 
     def _configure(self):
         super(PseudoinverseExample, self)._configure()
 
-        self.title = 'Superposed sine; Pseudoinverse; {} samples'.format(NUM_TRAINING_SAMPLES)
+        self.num_training_samples = 10000
+        self.num_test_samples = 500
+
+        self.title = 'Superposed sine; Pseudoinverse; {} samples'.format(
+            self.num_training_samples
+        )
 
         self.hyper_parameters = {
             'reservoir_size': 3000,

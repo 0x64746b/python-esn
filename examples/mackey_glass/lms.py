@@ -16,20 +16,22 @@ import numpy as np
 
 from esn import LmsEsn
 from esn.activation_functions import lecun
-from esn.examples import EsnExample
-from esn.examples.mackey_glass import NUM_TRAINING_SAMPLES
+from . import MackeyGlassExample
 
 
 logger = logging.getLogger(__name__)
 
 
-class LmsExample(EsnExample):
+class LmsExample(MackeyGlassExample):
 
     def _configure(self):
         super(LmsExample, self)._configure()
 
+        self.num_training_samples = 10000
+        self.num_test_samples = 500
+
         self.title = 'Mackey-Glass; LMS; {} samples'.format(
-            NUM_TRAINING_SAMPLES
+            self.num_training_samples
         )
 
         self.random_seed = 1839385064

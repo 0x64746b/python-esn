@@ -29,22 +29,14 @@ logger = logging.getLogger(__name__)
 
 class EsnExample(object):
 
-    def __init__(
-            self,
-            training_inputs,
-            training_outputs,
-            test_inputs,
-            test_outputs
-    ):
-        self.training_inputs = training_inputs
-        self.training_outputs = training_outputs
-
-        self.test_inputs = test_inputs
-        self.test_outputs = test_outputs
-
+    def __init__(self):
         self._configure()
+        self._load_data()
 
     def _configure(self):
+        self.num_training_samples = 0
+        self.num_test_samples = 0
+
         self.title = ''
         self.periodicity = None
 
@@ -391,28 +383,22 @@ def dispatch_examples():
 
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
-        if args.cross_validate:
-            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
-        data = example_group.load_data(args.data_file)
+        example_args = {'data_file': args.data_file}
     elif args.example_group == 'frequency-generator':
         example_group = frequency_generator
-        if args.cross_validate:
-            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
-        data = example_group.load_data()
+        example_args = {}
     elif args.example_group == 'superposed-sinusoid':
         example_group = superposed_sinusoid
-        if args.cross_validate:
-            example_group.NUM_TRAINING_SAMPLES += example_group.NUM_TEST_SAMPLES
-        data = example_group.load_data()
+        example_args = {}
 
     if args.network_type == 'pinv':
-        example = example_group.PseudoinverseExample(*data)
+        example = example_group.PseudoinverseExample(**example_args)
     elif args.network_type == 'lms':
-        example = example_group.LmsExample(*data)
+        example = example_group.LmsExample(**example_args)
     elif args.network_type == 'rls':
-        example = example_group.RlsExample(*data)
+        example = example_group.RlsExample(**example_args)
     elif args.network_type == 'mlp':
-        example = example_group.MlpExample(*data)
+        example = example_group.MlpExample(**example_args)
 
     if args.optimize:
         example.optimize(args.optimize)
