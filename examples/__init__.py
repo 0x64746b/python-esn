@@ -92,7 +92,8 @@ class EsnExample(object):
         else:
             fig, (main, training_activations, extra) = plt.subplots(nrows=3)
 
-        main.set_title(self.title)
+        if debug or not output_file:
+            main.set_title(self.title)
         pd.DataFrame(data).plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
         if self.periodicity:
             main.xaxis.set_major_locator(
