@@ -57,4 +57,5 @@ class SuperposedSinusoidExample(EsnExample):
 # make modules importable from the package name space.
 #  import late to break cyclic import
 from .pseudoinverse import PseudoinverseExample
+from .lms import LmsExample
 from .rls import RlsExample
