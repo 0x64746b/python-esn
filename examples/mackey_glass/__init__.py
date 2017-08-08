@@ -54,6 +54,7 @@ class MackeyGlassExample(EsnExample):
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
-from .lms import LmsExample
 from .pseudoinverse import PseudoinverseExample
+from .lms import LmsExample
 from .rls import RlsExample
+from .mlp import MlpExample

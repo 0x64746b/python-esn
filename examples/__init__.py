@@ -347,7 +347,7 @@ def dispatch_examples():
         '-n',
         '--network-type',
         metavar='TYPE',
-        choices=['pinv', 'lms', 'rls'],
+        choices=['pinv', 'lms', 'rls', 'mlp'],
         default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
