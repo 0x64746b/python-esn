@@ -11,6 +11,8 @@ from __future__ import (
 
 import argparse
 import logging
+import multiprocessing
+import os
 import pprint
 
 import hyperopt
@@ -224,41 +226,33 @@ class EsnExample(object):
         # load fresh data
         self._load_data(offset=True)
 
-        trial_num = 0
-        for trial in best_trials:
-            trial_num += 1
+        num_workers = int(os.environ.get('PYTHON_ESN_NUM_WORKERS', os.cpu_count()))
+        with multiprocessing.Pool(num_workers) as pool:
+            cross_validation_results = [
+                pool.apply_async(self._cross_validate_hyper_parameters, (trial,))
+                for trial in best_trials
+            ]
 
-            # unpack and resolve hyper-parameter value lists
-            hyper_parameters = trial['misc']['vals'].copy()
-            for parameter, value in hyper_parameters.items():
-                hyper_parameters[parameter] = self._resolve_choice(
-                    parameter,
-                    value[0]
+            for trial_num, result in enumerate(cross_validation_results):
+                trial = best_trials[trial_num]
+                cross_validation_error = result.get()
+
+                if isinstance(cross_validation_error, Exception):
+                    logger.error('solution %d: %s', trial_num, cross_validation_error)
+                    continue
+
+                optimization_error = trial['result']['loss']
+
+                logger.info(
+                    'solution %d: optimization vs cross-validation error: %f vs %f',
+                    trial_num,
+                    optimization_error,
+                    cross_validation_error,
                 )
 
-            np.random.seed(int(trial['result']['seed']))
-
-            try:
-                predicted_outputs = self._train(**hyper_parameters)
-                cross_validation_error = np.sqrt(mean_squared_error(
-                    self.test_outputs,
-                    predicted_outputs
-                ))
-            except Exception as error:
-                logger.error('solution %d: %s', trial_num, error)
-                continue
-
-            optimization_error = trial['result']['loss']
-
-            logger.info(
-                'solution %d: optimization vs cross-validation error: %f vs %f',
-                trial_num,
-                optimization_error,
-                cross_validation_error,
-            )
-
-            if cross_validation_error <= (optimization_error * 1.05):
-                break
+                if cross_validation_error <= (optimization_error * 1.05):
+                    pool.terminate()
+                    break
 
         print(
             'Suggested hyper-parameters (solution {}, id {}):\n'
@@ -267,9 +261,30 @@ class EsnExample(object):
                 trial_num,
                 trial['_id'],
                 trial['result']['seed'],
-                pprint.pformat(hyper_parameters),
+                pprint.pformat(trial['misc']['vals']),
             )
         )
+
+    def _cross_validate_hyper_parameters(self, trial):
+        # unpack and resolve hyper-parameter value lists
+        hyper_parameters = trial['misc']['vals'].copy()
+        for parameter, value in hyper_parameters.items():
+            hyper_parameters[parameter] = self._resolve_choice(
+                parameter,
+                value[0]
+            )
+
+        np.random.seed(int(trial['result']['seed']))
+
+        try:
+            predicted_outputs = self._train(**hyper_parameters)
+            return np.sqrt(mean_squared_error(
+                self.test_outputs,
+                predicted_outputs
+            ))
+        except Exception as error:
+            return error
+
 
     def _build_choice(self, label):
         return [label, self.search_space_choices[label]]
