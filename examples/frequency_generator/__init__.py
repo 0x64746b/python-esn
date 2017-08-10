@@ -61,6 +61,9 @@ class FrequencyGeneratorExample(EsnExample):
         return frequencies, signal
 
     def _load_data(self, offset=0):
+        # explicitly seed PRNG for reproducible data generation
+        np.random.seed(42)
+
         frequencies, signal = self.generate_signal()
 
         # shift to a fresh set of data

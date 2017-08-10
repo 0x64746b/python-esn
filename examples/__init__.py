@@ -404,9 +404,6 @@ def dispatch_examples():
         level=max(logging.DEBUG, logging.WARNING - args.verbosity * 10)
     )
 
-    # explicitly seed PRNG for reproducible data generation
-    np.random.seed(42)
-
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
         example_args = {'data_file': args.data_file}
