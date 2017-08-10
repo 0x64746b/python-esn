@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 class LmsExample(MackeyGlassExample):
 
-    def _configure(self):
-        super(LmsExample, self)._configure()
+    def __init__(self, *args, **kwargs):
+        super(LmsExample, self).__init__(*args, **kwargs)
 
         self.num_training_samples = 10000
         self.num_test_samples = 500

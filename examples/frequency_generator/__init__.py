@@ -25,6 +25,10 @@ INPUT_NOISE_FACTOR = 0.03
 
 class FrequencyGeneratorExample(EsnExample):
 
+    def __init__(self):
+        super(FrequencyGeneratorExample, self).__init__()
+        self.periodicity = SAMPLES_PER_PERIOD
+
     @staticmethod
     def generate_signal():
         """
@@ -55,10 +59,6 @@ class FrequencyGeneratorExample(EsnExample):
             signal[i] = np.sin(sampling_point)
 
         return frequencies, signal
-
-    def _configure(self):
-        super(FrequencyGeneratorExample, self)._configure()
-        self.periodicity = SAMPLES_PER_PERIOD
 
     def _load_data(self, offset=False):
         frequencies, signal = self.generate_signal()

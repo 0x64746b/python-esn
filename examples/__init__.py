@@ -32,9 +32,6 @@ logger = logging.getLogger(__name__)
 class EsnExample(object):
 
     def __init__(self):
-        self._configure()
-
-    def _configure(self):
         self.num_training_samples = 0
         self.num_test_samples = 0
 
@@ -287,7 +284,6 @@ class EsnExample(object):
             ))
         except Exception as error:
             return error
-
 
     def _build_choice(self, label):
         return [label, self.search_space_choices[label]]

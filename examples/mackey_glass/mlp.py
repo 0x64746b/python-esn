@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 class MlpExample(MackeyGlassExample):
 
-    def _configure(self):
-        super(MlpExample, self)._configure()
+    def __init__(self, *args, **kwargs):
+        super(MlpExample, self).__init__(*args, **kwargs)
 
         self.num_training_samples = 1000
         self.num_test_samples = 500

@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 class PseudoinverseExample(MackeyGlassExample):
 
-    def _configure(self):
-        super(PseudoinverseExample, self)._configure()
+    def __init__(self, *args, **kwargs):
+        super(PseudoinverseExample, self).__init__(*args, **kwargs)
 
         self.num_training_samples = 1000
         self.num_test_samples = 500

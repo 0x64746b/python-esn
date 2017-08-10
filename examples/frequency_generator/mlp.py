@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 class MlpExample(FrequencyGeneratorExample):
 
-    def _configure(self):
-        super(MlpExample, self)._configure()
+    def __init__(self):
+        super(MlpExample, self).__init__()
 
         self.num_training_samples = 10000
         self.num_test_samples = 5000

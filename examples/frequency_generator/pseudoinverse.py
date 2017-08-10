@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 class PseudoinverseExample(FrequencyGeneratorExample):
 
-    def _configure(self):
-        super(PseudoinverseExample, self)._configure()
+    def __init__(self):
+        super(PseudoinverseExample, self).__init__()
 
         self.num_training_samples = 10000
         self.num_test_samples = 5000
