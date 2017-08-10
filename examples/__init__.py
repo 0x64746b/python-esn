@@ -33,7 +33,6 @@ class EsnExample(object):
 
     def __init__(self):
         self._configure()
-        self._load_data()
 
     def _configure(self):
         self.num_training_samples = 0
@@ -52,6 +51,8 @@ class EsnExample(object):
         }
 
     def run(self, output_file):
+        self._load_data()
+
         np.random.seed(self.random_seed)
 
         predicted_outputs = self._train(**self.hyper_parameters)
@@ -96,6 +97,7 @@ class EsnExample(object):
 
         if debug or not output_file:
             main.set_title(self.title)
+
         pd.DataFrame(data).plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
         if self.periodicity:
             main.xaxis.set_major_locator(
@@ -161,6 +163,8 @@ class EsnExample(object):
             plt.show()
 
     def optimize(self, exp_key):
+        self._load_data()
+
         trials = hyperopt.mongoexp.MongoTrials(
             'mongo://localhost:27017/python_esn_trials/jobs',
             exp_key=exp_key,
@@ -223,9 +227,6 @@ class EsnExample(object):
             key=lambda t: t['result']['loss']
         )
 
-        # load fresh data
-        self._load_data(offset=True)
-
         num_workers = int(os.environ.get('PYTHON_ESN_NUM_WORKERS', os.cpu_count()))
         with multiprocessing.Pool(num_workers) as pool:
             cross_validation_results = [
@@ -273,6 +274,8 @@ class EsnExample(object):
                 parameter,
                 value[0]
             )
+
+        self._load_data(offset=True)
 
         np.random.seed(int(trial['result']['seed']))
 
