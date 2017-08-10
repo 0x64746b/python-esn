@@ -60,14 +60,13 @@ class FrequencyGeneratorExample(EsnExample):
 
         return frequencies, signal
 
-    def _load_data(self, offset=False):
+    def _load_data(self, offset=0):
         frequencies, signal = self.generate_signal()
 
-        if offset:
-            # start with a fresh set of data
-            wasted = self.num_training_samples + self.num_test_samples
-            frequencies = np.delete(frequencies, np.s_[:wasted])
-            signal = np.delete(signal, np.s_[:wasted])
+        # shift to a fresh set of data
+        discarded = offset * (self.num_training_samples + self.num_test_samples)
+        frequencies = np.delete(frequencies, np.s_[:discarded])
+        signal = np.delete(signal, np.s_[:discarded])
 
         # scale frequencies to [-1, 1]
         frequencies = scale(frequencies)

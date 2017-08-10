@@ -233,22 +233,24 @@ class EsnExample(object):
 
             for trial_num, result in enumerate(cross_validation_results):
                 trial = best_trials[trial_num]
-                cross_validation_error = result.get()
-
-                if isinstance(cross_validation_error, Exception):
-                    logger.error('solution %d: %s', trial_num, cross_validation_error)
-                    continue
 
                 optimization_error = trial['result']['loss']
+                cross_validation_errors = result.get()
 
                 logger.info(
-                    'solution %d: optimization vs cross-validation error: %f vs %f',
+                    'solution %d: optimization vs cross-validation errors: %f vs %s and %s',
                     trial_num,
                     optimization_error,
-                    cross_validation_error,
+                    *cross_validation_errors,
                 )
 
-                if cross_validation_error <= (optimization_error * 1.05):
+                validation_successful = True
+                for error in cross_validation_errors:
+                    if isinstance(error, Exception) or error > (optimization_error * 1.1):
+                        validation_successful = False
+                        break
+
+                if validation_successful:
                     pool.terminate()
                     break
 
@@ -264,6 +266,23 @@ class EsnExample(object):
         )
 
     def _cross_validate_hyper_parameters(self, trial):
+        def validate(offset):
+            self._load_data(offset)
+
+            np.random.seed(int(trial['result']['seed']))
+
+            try:
+                predicted_outputs = self._train(**hyper_parameters)
+                return round(
+                    np.sqrt(mean_squared_error(
+                        self.test_outputs,
+                        predicted_outputs
+                    )),
+                    6
+                )
+            except Exception as error:
+                return error
+
         # unpack and resolve hyper-parameter value lists
         hyper_parameters = trial['misc']['vals'].copy()
         for parameter, value in hyper_parameters.items():
@@ -272,18 +291,7 @@ class EsnExample(object):
                 value[0]
             )
 
-        self._load_data(offset=True)
-
-        np.random.seed(int(trial['result']['seed']))
-
-        try:
-            predicted_outputs = self._train(**hyper_parameters)
-            return np.sqrt(mean_squared_error(
-                self.test_outputs,
-                predicted_outputs
-            ))
-        except Exception as error:
-            return error
+        return validate(offset=1), validate(offset=2)
 
     def _build_choice(self, label):
         return [label, self.search_space_choices[label]]
