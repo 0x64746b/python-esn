@@ -200,16 +200,20 @@ class EsnExample(object):
                 result = {
                     'status': hyperopt.STATUS_OK,
                     'loss': rmse,
-                    'seed': str(random_seed)
+                    'seed': str(random_seed),
+                    'num_training_samples': str(self.num_training_samples),
+                    'num_test_samples': str(self.num_test_samples),
                 }
         finally:
             logger.info(
-                'seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                '(%s|%s) seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                self.num_training_samples,
+                self.num_test_samples,
                 random_seed,
                 hyper_parameters,
                 result['loss'] if 'loss' in result else result['problem'],
                 timer() - start,
-                )
+            )
 
             return result
 
