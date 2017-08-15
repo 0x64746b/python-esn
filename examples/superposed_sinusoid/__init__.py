@@ -58,3 +58,4 @@ class SuperposedSinusoidExample(EsnExample):
 from .pseudoinverse import PseudoinverseExample
 from .lms import LmsExample
 from .rls import RlsExample
+from .mlp import MlpExample
