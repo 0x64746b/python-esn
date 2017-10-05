@@ -16,7 +16,7 @@ from esn.examples import EsnExample
 from esn.preprocessing import scale
 
 
-NUM_PERIODS = 300
+NUM_PERIODS = 10000
 SAMPLES_PER_PERIOD = 300  # without endpoint
 NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLES_PER_PERIOD
 
