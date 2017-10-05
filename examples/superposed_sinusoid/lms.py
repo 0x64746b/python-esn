@@ -27,26 +27,26 @@ class LmsExample(SuperposedSinusoidExample):
     def __init__(self):
         super(LmsExample, self).__init__()
 
-        self.num_training_samples = 10000
+        self.num_training_samples = 850000
         self.num_test_samples = 500
 
         self.title = 'Superposed sine; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 4137605587
+        self.random_seed = 2105236657
         self.hyper_parameters = {
             'reservoir_size': 200,
-            'spectral_radius': 1.13,
-            'leaking_rate': 0.05,
-            'learning_rate': 0.00001,
-            'sparsity': 0.92,
-            'initial_transients': 500,
-            'state_noise': 0.0000316,
+            'spectral_radius': 1.27,
+            'leaking_rate': 0.07,
+            'learning_rate': 0.00014,
+            'sparsity': 0.11,
+            'initial_transients': 300,
+            'state_noise': 0.0044091,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 0.6,
-            'signal_scale': 0.9,
+            'bias_scale': -0.4,
+            'signal_scale': 3.3,
         }
 
         self.search_space = (
