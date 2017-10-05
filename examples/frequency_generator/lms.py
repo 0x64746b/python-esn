@@ -31,27 +31,27 @@ class LmsExample(FrequencyGeneratorExample):
     def __init__(self):
         super(LmsExample, self).__init__()
 
-        self.num_training_samples = 10000
+        self.num_training_samples = 850000
         self.num_test_samples = 5000
 
         self.title = 'Frequency generator; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 715059645
+        self.random_seed = 3462281297
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 0.58,
-            'leaking_rate': 0.09,
-            'learning_rate': 0.001,
+            'spectral_radius': 1.02,
+            'leaking_rate': 0.1,
+            'learning_rate': 0.00004,
             'sparsity': 0.4,
-            'initial_transients': 450,
-            'state_noise': 0.0005892,
+            'initial_transients': 250,
+            'state_noise': 0.0001428,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 5.83,
-            'frequency_scale': 1,
-            'signal_scale': 0.73,
+            'bias_scale': 1.28,
+            'frequency_scale': 1.63,
+            'signal_scale': 2.45,
         }
 
         self.search_space = (
