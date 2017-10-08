@@ -27,26 +27,26 @@ class LmsExample(MackeyGlassExample):
     def __init__(self, *args, **kwargs):
         super(LmsExample, self).__init__(*args, **kwargs)
 
-        self.num_training_samples = 100000
+        self.num_training_samples = 500000
         self.num_test_samples = 500
 
         self.title = 'Mackey-Glass; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 3897304651
+        self.random_seed = 1142985281
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.91,
-            'leaking_rate': 0.13,
-            'learning_rate': 0.0007,
-            'sparsity': 0.47,
-            'initial_transients': 800,
-            'state_noise': 0.0080817,
+            'spectral_radius': 1.58,
+            'leaking_rate': 0.31,
+            'learning_rate': 0.00036,
+            'sparsity': 0.53,
+            'initial_transients': 700,
+            'state_noise': 0.0075013,
             'squared_network_state': True,
-            'activation_function': np.tanh,
-            'bias_scale': 0.84,
-            'signal_scale': -4.6,
+            'activation_function': lecun,
+            'bias_scale': 0.79,
+            'signal_scale': 4.2,
         }
 
         self.search_space = (
