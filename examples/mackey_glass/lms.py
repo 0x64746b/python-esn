@@ -27,30 +27,30 @@ class LmsExample(MackeyGlassExample):
     def __init__(self, *args, **kwargs):
         super(LmsExample, self).__init__(*args, **kwargs)
 
-        self.num_training_samples = 10000
+        self.num_training_samples = 100000
         self.num_test_samples = 500
 
         self.title = 'Mackey-Glass; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 1839385064
+        self.random_seed = 3897304651
         self.hyper_parameters = {
-            'reservoir_size': 500,
-            'spectral_radius': 1.11,
-            'leaking_rate': 0.75,
-            'learning_rate': 0.00002,
-            'sparsity': 0.95,
-            'initial_transients': 300,
-            'state_noise': 0.004,
+            'reservoir_size': 100,
+            'spectral_radius': 1.91,
+            'leaking_rate': 0.13,
+            'learning_rate': 0.0007,
+            'sparsity': 0.47,
+            'initial_transients': 800,
+            'state_noise': 0.0080817,
             'squared_network_state': True,
-            'activation_function': lecun,
-            'bias_scale': -0.4,
-            'signal_scale': 1.2,
+            'activation_function': np.tanh,
+            'bias_scale': 0.84,
+            'signal_scale': -4.6,
         }
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('reservoir_size', 100, 101, 10),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
