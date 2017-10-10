@@ -29,33 +29,33 @@ class MlpExample(MackeyGlassExample):
     def __init__(self, *args, **kwargs):
         super(MlpExample, self).__init__(*args, **kwargs)
 
-        self.num_training_samples = 1000
+        self.num_training_samples = 150000
         self.num_test_samples = 500
 
         self.title = 'Mackey-Glass; MLP; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 1839385064
+        self.random_seed = 1919597375
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.14,
-            'leaking_rate': 0.28,
-            'sparsity': 0.66,
-            'initial_transients': 5000,
-            'state_noise': 0.0047857,
-            'squared_network_state': True,
-            'activation_function': lecun,
-            'mlp_hidden_layer_size': 300,
-            'mlp_activation_function': 'tanh',
+            'spectral_radius': 1.43,
+            'leaking_rate': 0.22,
+            'sparsity': 0.33,
+            'initial_transients': 450,
+            'state_noise': 0.004151,
+            'squared_network_state': False,
+            'activation_function': np.tanh,
+            'mlp_hidden_layer_size': 500,
+            'mlp_activation_function': 'relu',
             'mlp_solver': 'adam',
-            'bias_scale': 0.88,
-            'signal_scale': 3.3,
+            'bias_scale': -0.55,
+            'signal_scale': -2.4,
         }
 
         self.search_space_choices.update({
             'mlp_activation_function': ['identity', 'logistic', 'tanh', 'relu'],
-            'mlp_solver': ['lbfgs', 'sgd', 'adam'],
+            'mlp_solver': ['sgd', 'adam'],
         })
 
         self.search_space = (
