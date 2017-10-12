@@ -37,18 +37,18 @@ class PseudoinverseExample(MackeyGlassExample):
             self.num_training_samples
         )
 
-        self.random_seed = 2585260129
+        self.random_seed = 2785622170
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 0.7,
-            'leaking_rate': 0.33,
-            'sparsity': 0.97,
-            'initial_transients': 450,
-            'state_noise': 1e-7,
+            'spectral_radius': 1.21,
+            'leaking_rate': 0.61,
+            'sparsity': 0.31,
+            'initial_transients': 100,
+            'state_noise': 0.0000139,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 1.64,
-            'signal_scale': 1.3,
+            'bias_scale': -3.04,
+            'signal_scale': 1.5,
         }
 
         self.search_space = (
@@ -63,6 +63,13 @@ class PseudoinverseExample(MackeyGlassExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(PseudoinverseExample, self)._load_data(offset)
+
+        # remove many of the training labels to simulate incomplete data
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -96,7 +103,7 @@ class PseudoinverseExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
