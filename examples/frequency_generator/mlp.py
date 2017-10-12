@@ -29,41 +29,42 @@ class MlpExample(FrequencyGeneratorExample):
     def __init__(self):
         super(MlpExample, self).__init__()
 
-        self.num_training_samples = 10000
+        self.num_training_samples = 850000
         self.num_test_samples = 5000
 
         self.title = 'Frequency generator; MLP; {} samples'.format(
             self.num_training_samples
         )
 
+        self.random_seed = 3637692427
         self.hyper_parameters = {
-            'reservoir_size': 1000,
-            'spectral_radius': 1.5,
-            'leaking_rate': 0.1,
-            'sparsity': 0.95,
-            'initial_transients': 1000,
-            'state_noise': 1e-5,
+            'reservoir_size': 200,
+            'spectral_radius': 0.92,
+            'leaking_rate': 0.09,
+            'sparsity': 0.4,
+            'initial_transients': 100,
+            'state_noise': 0.0001132,
             'squared_network_state': True,
             'activation_function': lecun,
-            'mlp_hidden_layer_size': 300,
-            'mlp_activation_function': 'tanh',
+            'mlp_hidden_layer_size': 400,
+            'mlp_activation_function': 'relu',
             'mlp_solver': 'adam',
-            'bias_scale': 2.6,
-            'frequency_scale': 2.2,
-            'signal_scale': 5.5,
+            'bias_scale': -0.3,
+            'frequency_scale': 1.48,
+            'signal_scale': -2.97,
         }
 
         self.search_space_choices.update({
             'mlp_activation_function': ['identity', 'logistic', 'tanh', 'relu'],
-            'mlp_solver': ['lbfgs', 'sgd', 'adam'],
+            'mlp_solver': ['sgd', 'adam'],
         })
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('reservoir_size', 200, 201, 10),
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0, 0.99, 0.1),
-            hyperopt.hp.quniform('initial_transients', 1000, 15001, 1000),
+            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-3, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
