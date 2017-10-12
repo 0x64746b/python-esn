@@ -171,7 +171,7 @@ class EsnExample(object):
             self._objective,
             space=self.search_space,
             algo=hyperopt.tpe.suggest,
-            max_evals=500,
+            max_evals=5000,
             trials=trials,
         )
 

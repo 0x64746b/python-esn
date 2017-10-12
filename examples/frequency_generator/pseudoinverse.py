@@ -42,19 +42,19 @@ class PseudoinverseExample(FrequencyGeneratorExample):
             self.num_training_samples
         )
 
-        self.random_seed = 3570159704
+        self.random_seed = 2444046434
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 0.27,
-            'leaking_rate': 0.08,
-            'sparsity': 0.2,
-            'initial_transients': 200,
-            'state_noise': 0.0002802,
+            'spectral_radius': 0.74,
+            'leaking_rate': 0.09,
+            'sparsity': 0.3,
+            'initial_transients': 300,
+            'state_noise': 0.0000948,
             'squared_network_state': True,
-            'activation_function': lecun,
-            'bias_scale': -0.16,
-            'frequency_scale': 0.5,
-            'signal_scale': 2.36,
+            'activation_function': np.tanh,
+            'bias_scale': 6.77,
+            'frequency_scale': -0.2,
+            'signal_scale': 0.64,
         }
 
         self.search_space = (
@@ -70,6 +70,12 @@ class PseudoinverseExample(FrequencyGeneratorExample):
             hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.01),
         )
+
+    def _load_data(self, offset=0):
+        super(PseudoinverseExample, self)._load_data(offset)
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -104,7 +110,7 @@ class PseudoinverseExample(FrequencyGeneratorExample):
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         S = [np.hstack((
