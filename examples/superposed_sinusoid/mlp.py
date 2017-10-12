@@ -29,27 +29,27 @@ class MlpExample(SuperposedSinusoidExample):
     def __init__(self):
         super(MlpExample, self).__init__()
 
-        self.num_training_samples = 10000
+        self.num_training_samples = 100000
         self.num_test_samples = 500
 
         self.title = 'Superposed sine; MLP; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 4137605587
+        self.random_seed = 2459137643
         self.hyper_parameters = {
             'reservoir_size': 200,
-            'spectral_radius': 1.13,
-            'leaking_rate': 0.05,
-            'sparsity': 0.92,
-            'initial_transients': 500,
-            'state_noise': 0.0000316,
+            'spectral_radius': 1.16,
+            'leaking_rate': 0.08,
+            'sparsity': 0.12,
+            'initial_transients': 100,
+            'state_noise': 0.0039785,
             'squared_network_state': True,
             'activation_function': lecun,
             'mlp_hidden_layer_size': 300,
-            'mlp_activation_function': 'tanh',
+            'mlp_activation_function': 'relu',
             'mlp_solver': 'adam',
-            'bias_scale': 0.6,
+            'bias_scale': -0.6,
             'signal_scale': 0.9,
         }
 
