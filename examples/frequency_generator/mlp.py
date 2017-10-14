@@ -36,22 +36,22 @@ class MlpExample(FrequencyGeneratorExample):
             self.num_training_samples
         )
 
-        self.random_seed = 3637692427
+        self.random_seed = 3006599351
         self.hyper_parameters = {
-            'reservoir_size': 200,
-            'spectral_radius': 0.92,
-            'leaking_rate': 0.09,
-            'sparsity': 0.4,
-            'initial_transients': 100,
-            'state_noise': 0.0001132,
+            'reservoir_size': 300,
+            'spectral_radius': 0.9,
+            'leaking_rate': 0.1,
+            'sparsity': 0.1,
+            'initial_transients': 900,
+            'state_noise': 0.0000183,
             'squared_network_state': True,
-            'activation_function': lecun,
-            'mlp_hidden_layer_size': 400,
+            'activation_function': np.tanh,
+            'mlp_hidden_layer_size': 300,
             'mlp_activation_function': 'relu',
-            'mlp_solver': 'adam',
-            'bias_scale': -0.3,
-            'frequency_scale': 1.48,
-            'signal_scale': -2.97,
+            'mlp_solver': 'sgd',
+            'bias_scale': 0.64,
+            'frequency_scale': 1.16,
+            'signal_scale': 3.24,
         }
 
         self.search_space_choices.update({
@@ -60,11 +60,11 @@ class MlpExample(FrequencyGeneratorExample):
         })
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 200, 201, 10),
+            hyperopt.hp.quniform('reservoir_size', 300, 301, 10),
             hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0, 0.99, 0.1),
-            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
+            hyperopt.hp.quniform('initial_transients', 200, 1001, 100),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-3, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),

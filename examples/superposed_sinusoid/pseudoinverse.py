@@ -38,18 +38,18 @@ class PseudoinverseExample(SuperposedSinusoidExample):
             self.num_training_samples
         )
 
-        self.random_seed = 4137605587
+        self.random_seed = 1462542195
         self.hyper_parameters = {
             'reservoir_size': 200,
-            'spectral_radius': 1.13,
-            'leaking_rate': 0.05,
-            'sparsity': 0.92,
-            'initial_transients': 500,
-            'state_noise': 0.0000316,
+            'spectral_radius': 0.86,
+            'leaking_rate': 0.08,
+            'sparsity': 0.95,
+            'initial_transients': 300,
+            'state_noise': 0.0000003,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 0.6,
-            'signal_scale': 0.9,
+            'bias_scale': 0.3,
+            'signal_scale': 0.6,
         }
 
         self.search_space = (
@@ -64,6 +64,12 @@ class PseudoinverseExample(SuperposedSinusoidExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(PseudoinverseExample, self)._load_data(offset)
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -93,7 +99,7 @@ class PseudoinverseExample(SuperposedSinusoidExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]

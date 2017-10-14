@@ -34,19 +34,19 @@ class LmsExample(MackeyGlassExample):
             self.num_training_samples
         )
 
-        self.random_seed = 1305966351
+        self.random_seed = 1906128195
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.35,
-            'leaking_rate': 0.26,
-            'learning_rate': 0.00161,
-            'sparsity': 0.6,
-            'initial_transients': 100,
-            'state_noise': 0.0023461,
+            'spectral_radius': 1.95,
+            'leaking_rate': 0.15,
+            'learning_rate': 0.00395,
+            'sparsity': 0.85,
+            'initial_transients': 800,
+            'state_noise': 0.0033962,
             'squared_network_state': True,
-            'activation_function': lecun,
-            'bias_scale': 0.32,
-            'signal_scale': 3.9,
+            'activation_function': np.tanh,
+            'bias_scale': 1.72,
+            'signal_scale': -5.4,
         }
 
         self.search_space = (
@@ -62,6 +62,16 @@ class LmsExample(MackeyGlassExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(LmsExample, self)._load_data(offset)
+
+        # remove training labels to simulate incomplete data
+        self.training_inputs[2::3] = np.nan
+        self.training_inputs[3::3] = np.nan
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -97,7 +107,29 @@ class LmsExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        #print(' * fitting first data pair')
+        self.esn.fit(
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
+        )
+        for input_date, output_date in zip(
+                self.training_inputs[1:],
+                self.training_outputs[1:]
+        ):
+            if np.isnan(input_date):
+                #print(' ** input is nan, using last prediction')
+                input_date = prediction
+
+            if not np.isnan(output_date.item()):
+                #print(' * fitting pair')
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                prediction = self.esn.predict(input_date)
+                #print(' * generated prediction:', prediction)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
