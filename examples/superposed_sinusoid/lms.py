@@ -34,19 +34,19 @@ class LmsExample(SuperposedSinusoidExample):
             self.num_training_samples
         )
 
-        self.random_seed = 2377497255
+        self.random_seed = 2441229635
         self.hyper_parameters = {
             'reservoir_size': 200,
-            'spectral_radius': 1.12,
-            'leaking_rate': 0.09,
-            'learning_rate': 0.00017,
-            'sparsity': 0.35,
-            'initial_transients': 250,
-            'state_noise': 0.008707,
+            'spectral_radius': 1.0,
+            'leaking_rate': 0.11,
+            'learning_rate': 0.00008,
+            'sparsity': 0.42,
+            'initial_transients': 500,
+            'state_noise': 0.0093315,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': -0.5,
-            'signal_scale': 2.6,
+            'bias_scale': 0.3,
+            'signal_scale': 2.5,
         }
 
         self.search_space = (
@@ -62,6 +62,16 @@ class LmsExample(SuperposedSinusoidExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.1),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(LmsExample, self)._load_data(offset)
+
+        # remove known training values to simulate incomplete data
+        self.training_inputs[2::3] = np.nan
+        self.training_inputs[3::3] = np.nan
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -93,7 +103,25 @@ class LmsExample(SuperposedSinusoidExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
+        )
+        for input_date, output_date in zip(
+                self.training_inputs[1:],
+                self.training_outputs[1:]
+        ):
+            if np.isnan(input_date):
+                input_date = prediction
+
+            if not np.isnan(output_date.item()):
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                prediction = self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
