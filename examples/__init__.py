@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class EsnExample(object):
 
     def __init__(self):
+        self.num_loops = 1
         self.num_training_samples = 0
         self.num_test_samples = 0
 
@@ -201,12 +202,14 @@ class EsnExample(object):
                     'status': hyperopt.STATUS_OK,
                     'loss': rmse,
                     'seed': str(random_seed),
+                    'num_loops': str(self.num_loops),
                     'num_training_samples': str(self.num_training_samples),
                     'num_test_samples': str(self.num_test_samples),
                 }
         finally:
             logger.info(
-                '(%s|%s) seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                '(%s * %s|%s) seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                self.num_loops,
                 self.num_training_samples,
                 self.num_test_samples,
                 random_seed,
