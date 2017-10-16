@@ -31,27 +31,28 @@ class LmsExample(FrequencyGeneratorExample):
     def __init__(self):
         super(LmsExample, self).__init__()
 
-        self.num_training_samples = 850000
+        self.num_loops = 9
+        self.num_training_samples = 100000
         self.num_test_samples = 5000
 
         self.title = 'Frequency generator; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 3013457484
+        self.random_seed = 626566608
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.32,
-            'leaking_rate': 0.25,
-            'learning_rate': 0.0005,
-            'sparsity': 0.9,
-            'initial_transients': 450,
-            'state_noise': 0.0008439,
+            'spectral_radius': 1.05,
+            'leaking_rate': 0.18,
+            'learning_rate': 0.00004,
+            'sparsity': 0.1,
+            'initial_transients': 200,
+            'state_noise': 0.00026,
             'squared_network_state': True,
-            'activation_function': np.tanh,
-            'bias_scale': 0.06,
-            'frequency_scale': -0.45,
-            'signal_scale': -1.15,
+            'activation_function': lecun,
+            'bias_scale': -1.85,
+            'frequency_scale': 1.5,
+            'signal_scale': 1.97,
         }
 
         self.search_space = (
@@ -68,16 +69,6 @@ class LmsExample(FrequencyGeneratorExample):
             hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.01),
         )
-
-    def _load_data(self, offset=0):
-        super(LmsExample, self)._load_data(offset)
-
-        # remove training labels to simulate incomplete data
-        self.training_inputs[2::3, 1] = np.nan
-        self.training_inputs[3::3, 1] = np.nan
-
-        self.training_outputs[1::3] = np.nan
-        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -114,25 +105,10 @@ class LmsExample(FrequencyGeneratorExample):
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
 
         # train
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
-        )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if np.isnan(input_date[1]):
-                input_date[1] = prediction[0]
-
-            if not np.isnan(output_date.item()):
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                prediction = self.esn.predict(input_date)
+        self.esn.fit(self.training_inputs, self.training_outputs)
+        for i in range(1, self.num_loops):
+            self.esn._num_seen_inputs = 0
+            self.esn.partial_fit(self.training_inputs, self.training_outputs)
 
         # test
         test_states = [np.hstack((
