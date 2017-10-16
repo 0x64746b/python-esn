@@ -34,19 +34,19 @@ class LmsExample(MackeyGlassExample):
             self.num_training_samples
         )
 
-        self.random_seed = 1906128195
+        self.random_seed = 3459763109
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.95,
-            'leaking_rate': 0.15,
-            'learning_rate': 0.00395,
-            'sparsity': 0.85,
-            'initial_transients': 800,
-            'state_noise': 0.0033962,
+            'spectral_radius': 1.4,
+            'leaking_rate': 0.35,
+            'learning_rate': 0.00044,
+            'sparsity': 0.25,
+            'initial_transients': 200,
+            'state_noise': 0.004009,
             'squared_network_state': True,
-            'activation_function': np.tanh,
-            'bias_scale': 1.72,
-            'signal_scale': -5.4,
+            'activation_function': lecun,
+            'bias_scale': 0.58,
+            'signal_scale': 5.4,
         }
 
         self.search_space = (
@@ -55,7 +55,7 @@ class LmsExample(MackeyGlassExample):
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.qloguniform('learning_rate', np.log(0.00001), np.log(0.1), 0.00001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
+            hyperopt.hp.quniform('initial_transients', 50, 301, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
