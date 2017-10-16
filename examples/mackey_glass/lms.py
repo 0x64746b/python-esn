@@ -27,27 +27,26 @@ class LmsExample(MackeyGlassExample):
     def __init__(self, *args, **kwargs):
         super(LmsExample, self).__init__(*args, **kwargs)
 
-        self.num_loops = 75
-        self.num_training_samples = 2000
+        self.num_training_samples = 150000
         self.num_test_samples = 500
 
         self.title = 'Mackey-Glass; LMS; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 3459763109
+        self.random_seed = 3505704940
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.4,
-            'leaking_rate': 0.35,
-            'learning_rate': 0.00044,
-            'sparsity': 0.25,
+            'spectral_radius': 1.55,
+            'leaking_rate': 0.21,
+            'learning_rate': 0.00144,
+            'sparsity': 0.37,
             'initial_transients': 200,
-            'state_noise': 0.004009,
+            'state_noise': 0.0046234,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 0.58,
-            'signal_scale': 5.4,
+            'bias_scale': 0.43,
+            'signal_scale': 6.1,
         }
 
         self.search_space = (
@@ -63,6 +62,15 @@ class LmsExample(MackeyGlassExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(LmsExample, self)._load_data(offset)
+
+        self.training_inputs[2::3] = np.nan
+        self.training_inputs[3::3] = np.nan
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -98,10 +106,25 @@ class LmsExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
-        for i in range(1, self.num_loops):
-            self.esn._num_seen_inputs = 0
-            self.esn.partial_fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
+        )
+        for input_date, output_date in zip(
+                self.training_inputs[1:],
+                self.training_outputs[1:]
+        ):
+            if np.isnan(input_date):
+                input_date = prediction
+
+            if not np.isnan(output_date.item()):
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                prediction = self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
