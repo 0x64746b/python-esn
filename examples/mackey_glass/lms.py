@@ -27,7 +27,8 @@ class LmsExample(MackeyGlassExample):
     def __init__(self, *args, **kwargs):
         super(LmsExample, self).__init__(*args, **kwargs)
 
-        self.num_training_samples = 150000
+        self.num_loops = 75
+        self.num_training_samples = 2000
         self.num_test_samples = 500
 
         self.title = 'Mackey-Glass; LMS; {} samples'.format(
@@ -63,16 +64,6 @@ class LmsExample(MackeyGlassExample):
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
 
-    def _load_data(self, offset=0):
-        super(LmsExample, self)._load_data(offset)
-
-        # remove training labels to simulate incomplete data
-        self.training_inputs[2::3] = np.nan
-        self.training_inputs[3::3] = np.nan
-
-        self.training_outputs[1::3] = np.nan
-        self.training_outputs[2::3] = np.nan
-
     def _train(
             self,
             reservoir_size,
@@ -107,29 +98,10 @@ class LmsExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        #print(' * fitting first data pair')
-        self.esn.fit(
-            np.array([self.training_inputs[0]]),
-            np.array([self.training_outputs[0]])
-        )
-        for input_date, output_date in zip(
-                self.training_inputs[1:],
-                self.training_outputs[1:]
-        ):
-            if np.isnan(input_date):
-                #print(' ** input is nan, using last prediction')
-                input_date = prediction
-
-            if not np.isnan(output_date.item()):
-                #print(' * fitting pair')
-                self.esn.partial_fit(
-                    np.array([input_date]),
-                    np.array([output_date])
-                )
-            else:
-                # drive reservoir
-                prediction = self.esn.predict(input_date)
-                #print(' * generated prediction:', prediction)
+        self.esn.fit(self.training_inputs, self.training_outputs)
+        for i in range(1, self.num_loops):
+            self.esn._num_seen_inputs = 0
+            self.esn.partial_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]

@@ -36,21 +36,21 @@ class MlpExample(MackeyGlassExample):
             self.num_training_samples
         )
 
-        self.random_seed = 1919597375
+        self.random_seed = 2920727260
         self.hyper_parameters = {
             'reservoir_size': 100,
-            'spectral_radius': 1.43,
-            'leaking_rate': 0.22,
-            'sparsity': 0.33,
-            'initial_transients': 450,
-            'state_noise': 0.004151,
+            'spectral_radius': 1.77,
+            'leaking_rate': 0.19,
+            'sparsity': 0.72,
+            'initial_transients': 350,
+            'state_noise': 0.0051349,
             'squared_network_state': False,
             'activation_function': np.tanh,
-            'mlp_hidden_layer_size': 500,
+            'mlp_hidden_layer_size': 400,
             'mlp_activation_function': 'relu',
-            'mlp_solver': 'adam',
-            'bias_scale': -0.55,
-            'signal_scale': -2.4,
+            'mlp_solver': 'sgd',
+            'bias_scale': 1.52,
+            'signal_scale': 3.5,
         }
 
         self.search_space_choices.update({
@@ -73,6 +73,16 @@ class MlpExample(MackeyGlassExample):
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
+
+    def _load_data(self, offset=0):
+        super(MlpExample, self)._load_data(offset)
+
+        # remove training labels to simulate incomplete data
+        self.training_inputs[2::3] = np.nan
+        self.training_inputs[3::3] = np.nan
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -105,6 +115,7 @@ class MlpExample(MackeyGlassExample):
             mlp_hidden_layer_sizes=(int(mlp_hidden_layer_size),),
             mlp_activation_function=mlp_activation_function,
             mlp_solver=mlp_solver,
+            batch_size=1,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -112,7 +123,25 @@ class MlpExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.fit(
+            np.array([self.training_inputs[0]]),
+            np.array([self.training_outputs[0]])
+        )
+        for input_date, output_date in zip(
+                self.training_inputs[1:],
+                self.training_outputs[1:]
+        ):
+            if np.isnan(input_date):
+                input_date = prediction
+
+            if not np.isnan(output_date.item()):
+                self.esn.partial_fit(
+                    np.array([input_date]),
+                    np.array([output_date])
+                )
+            else:
+                # drive reservoir
+                prediction = self.esn.predict(input_date)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]
