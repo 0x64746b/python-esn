@@ -18,26 +18,24 @@ import numpy as np
 
 from esn import RlsEsn
 from esn.activation_functions import lecun
-from esn.examples import EsnExample
-from esn.examples.superposed_sinusoid import TRAINING_LENGTH
 from esn.preprocessing import add_noise
+from . import SuperposedSinusoidExample
 
 
 logger = logging.getLogger(__name__)
 
 
-class RlsExample(EsnExample):
+class RlsExample(SuperposedSinusoidExample):
 
-    def __init__(self, *data):
-        super(RlsExample, self).__init__(*data)
+    def __init__(self):
+        super(RlsExample, self).__init__()
 
-        # remove every other label
-        self.training_outputs[1::2] = np.nan
+        self.num_training_samples = 10000
+        self.num_test_samples = 500
 
-    def _configure(self):
-        super(RlsExample, self)._configure()
-
-        self.title = 'Superposed sine; RLS; {} samples'.format(TRAINING_LENGTH)
+        self.title = 'Superposed sine; RLS; {} samples'.format(
+            self.num_training_samples
+        )
 
         self.hyper_parameters = {
             'spectral_radius': 1.11,
@@ -60,6 +58,12 @@ class RlsExample(EsnExample):
             hyperopt.hp.quniform('state_noise', 1e-10, 1e-2, 1e-10),
             hyperopt.hp.quniform('input_noise', 1e-10, 1e-2, 1e-10),
         )
+
+    def _load_data(self, offset=False):
+        super(RlsExample, self)._load_data(offset)
+
+        # remove every other label
+        self.training_outputs[1::2] = np.nan
 
     def _train(
             self,

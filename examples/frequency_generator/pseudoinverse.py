@@ -1,7 +1,8 @@
 # coding: utf-8
 
 """
-Use the extended system states of an ESN as inputs to a multilayer perceptron.
+Use the pseudoinverse of the extended system states to compute the output
+weights.
 """
 
 from __future__ import (
@@ -14,67 +15,67 @@ from __future__ import (
 import logging
 
 import hyperopt
+import hyperopt.mongoexp
 import numpy as np
 
-from esn import MlpEsn
+from esn import Esn
 from esn.activation_functions import lecun
+from esn.preprocessing import add_noise
 from . import FrequencyGeneratorExample
+
+
+INPUT_NOISE_FACTOR = 0.03
 
 
 logger = logging.getLogger(__name__)
 
 
-class MlpExample(FrequencyGeneratorExample):
+class PseudoinverseExample(FrequencyGeneratorExample):
 
     def __init__(self):
-        super(MlpExample, self).__init__()
+        super(PseudoinverseExample, self).__init__()
 
-        self.num_training_samples = 850000
+        self.num_training_samples = 10000
         self.num_test_samples = 5000
 
-        self.title = 'Frequency generator; MLP; {} samples'.format(
+        self.title = 'Frequency generator; Pseudoinverse; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 3006599351
+        self.random_seed = 2444046434
         self.hyper_parameters = {
-            'reservoir_size': 300,
-            'spectral_radius': 0.9,
-            'leaking_rate': 0.1,
-            'sparsity': 0.1,
-            'initial_transients': 900,
-            'state_noise': 0.0000183,
+            'reservoir_size': 100,
+            'spectral_radius': 0.74,
+            'leaking_rate': 0.09,
+            'sparsity': 0.3,
+            'initial_transients': 300,
+            'state_noise': 0.0000948,
             'squared_network_state': True,
             'activation_function': np.tanh,
-            'mlp_hidden_layer_size': 300,
-            'mlp_activation_function': 'relu',
-            'mlp_solver': 'sgd',
-            'bias_scale': 0.64,
-            'frequency_scale': 1.16,
-            'signal_scale': 3.24,
+            'bias_scale': 6.77,
+            'frequency_scale': -0.2,
+            'signal_scale': 0.64,
         }
 
-        self.search_space_choices.update({
-            'mlp_activation_function': ['identity', 'logistic', 'tanh', 'relu'],
-            'mlp_solver': ['sgd', 'adam'],
-        })
-
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 300, 301, 10),
-            hyperopt.hp.quniform('spectral_radius', 0, 1.5, 0.01),
+            hyperopt.hp.quniform('reservoir_size', 100, 101, 10),
+            hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
             hyperopt.hp.quniform('sparsity', 0, 0.99, 0.1),
-            hyperopt.hp.quniform('initial_transients', 200, 1001, 100),
+            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-3, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
-            hyperopt.hp.quniform('mlp_hidden_layer_size', 50, 501, 50),
-            hyperopt.hp.choice(*self._build_choice('mlp_activation_function')),
-            hyperopt.hp.choice(*self._build_choice('mlp_solver')),
             hyperopt.hp.qnormal('bias_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('frequency_scale', 1, 1, 0.01),
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.01),
         )
+
+    def _load_data(self, offset=0):
+        super(PseudoinverseExample, self)._load_data(offset)
+
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
 
     def _train(
             self,
@@ -86,15 +87,12 @@ class MlpExample(FrequencyGeneratorExample):
             state_noise,
             squared_network_state,
             activation_function,
-            mlp_hidden_layer_size,
-            mlp_activation_function,
-            mlp_solver,
             bias_scale,
             frequency_scale,
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = MlpEsn(
+        self.esn = Esn(
             in_size=2,
             reservoir_size=int(reservoir_size),
             out_size=1,
@@ -105,9 +103,6 @@ class MlpExample(FrequencyGeneratorExample):
             state_noise=state_noise,
             squared_network_state=squared_network_state,
             activation_function=activation_function,
-            mlp_hidden_layer_sizes=(int(mlp_hidden_layer_size),),
-            mlp_activation_function=mlp_activation_function,
-            mlp_solver=mlp_solver,
         )
         self.esn.num_tracked_units = num_tracked_units
 
@@ -115,7 +110,7 @@ class MlpExample(FrequencyGeneratorExample):
         self.esn.W_in *= [bias_scale, frequency_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         S = [np.hstack((
@@ -155,6 +150,6 @@ class MlpExample(FrequencyGeneratorExample):
             )
 
     def _get_plotting_data(self, predicted_outputs):
-        data = super(MlpExample, self)._get_plotting_data(predicted_outputs)
+        data = super(PseudoinverseExample, self)._get_plotting_data(predicted_outputs)
         data['Frequencies'] = self.test_inputs[:, 0]
         return data

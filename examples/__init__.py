@@ -11,6 +11,9 @@ from __future__ import (
 
 import argparse
 import logging
+import multiprocessing
+import os
+import pprint
 
 import hyperopt
 from matplotlib import pyplot as plt, ticker
@@ -20,28 +23,19 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 from timeit import default_timer as timer
 
+from esn.activation_functions import lecun
+
 
 logger = logging.getLogger(__name__)
 
 
 class EsnExample(object):
 
-    def __init__(
-            self,
-            training_inputs,
-            training_outputs,
-            test_inputs,
-            test_outputs
-    ):
-        self.training_inputs = training_inputs
-        self.training_outputs = training_outputs
+    def __init__(self):
+        self.num_loops = 1
+        self.num_training_samples = 0
+        self.num_test_samples = 0
 
-        self.test_inputs = test_inputs
-        self.test_outputs = test_outputs
-
-        self._configure()
-
-    def _configure(self):
         self.title = ''
         self.periodicity = None
 
@@ -49,8 +43,14 @@ class EsnExample(object):
         self.hyper_parameters = {}
 
         self.search_space = ()
+        self.search_space_choices = {
+            'squared_network_state': [False, True],
+            'activation_function': [np.tanh, lecun],
+        }
 
     def run(self, output_file):
+        self._load_data()
+
         np.random.seed(self.random_seed)
 
         predicted_outputs = self._train(**self.hyper_parameters)
@@ -93,7 +93,9 @@ class EsnExample(object):
         else:
             fig, (main, training_activations, extra) = plt.subplots(nrows=3)
 
-        main.set_title(self.title)
+        if debug or not output_file:
+            main.set_title(self.title)
+
         pd.DataFrame(data).plot(ax=main, ylim=[-1.1, 1.1]).legend(loc=1)
         if self.periodicity:
             main.xaxis.set_major_locator(
@@ -159,6 +161,8 @@ class EsnExample(object):
             plt.show()
 
     def optimize(self, exp_key):
+        self._load_data()
+
         trials = hyperopt.mongoexp.MongoTrials(
             'mongo://localhost:27017/python_esn_trials/jobs',
             exp_key=exp_key,
@@ -168,7 +172,7 @@ class EsnExample(object):
             self._objective,
             space=self.search_space,
             algo=hyperopt.tpe.suggest,
-            max_evals=1000,
+            max_evals=5000,
             trials=trials,
         )
 
@@ -197,18 +201,113 @@ class EsnExample(object):
                 result = {
                     'status': hyperopt.STATUS_OK,
                     'loss': rmse,
-                    'seed': str(random_seed)
+                    'seed': str(random_seed),
+                    'num_loops': str(self.num_loops),
+                    'num_training_samples': str(self.num_training_samples),
+                    'num_test_samples': str(self.num_test_samples),
                 }
         finally:
             logger.info(
-                'seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                '(%s * %s|%s) seed: %s | sampled hyper-parameters: %s => %s  [took: %s]',
+                self.num_loops,
+                self.num_training_samples,
+                self.num_test_samples,
                 random_seed,
                 hyper_parameters,
                 result['loss'] if 'loss' in result else result['problem'],
                 timer() - start,
-                )
+            )
 
             return result
+
+    def cross_validate(self, exp_key):
+        trials = hyperopt.mongoexp.MongoTrials(
+            'mongo://localhost:27017/python_esn_trials/jobs',
+            exp_key=exp_key,
+        )
+
+        best_trials = sorted(
+            filter(lambda t: t['result']['status'] == 'ok', trials.trials),
+            key=lambda t: t['result']['loss']
+        )
+
+        num_workers = int(os.environ.get('PYTHON_ESN_NUM_WORKERS', os.cpu_count()))
+        with multiprocessing.Pool(num_workers) as pool:
+            cross_validation_results = [
+                pool.apply_async(self._cross_validate_hyper_parameters, (trial,))
+                for trial in best_trials
+            ]
+
+            for trial_num, result in enumerate(cross_validation_results):
+                trial = best_trials[trial_num]
+
+                optimization_error = trial['result']['loss']
+                cross_validation_errors = result.get()
+
+                logger.info(
+                    'solution %d: optimization vs cross-validation errors: %f vs %s and %s',
+                    trial_num,
+                    optimization_error,
+                    *cross_validation_errors,
+                )
+
+                validation_successful = True
+                for error in cross_validation_errors:
+                    if isinstance(error, Exception) or error > (optimization_error * 1.1):
+                        validation_successful = False
+                        break
+
+                if validation_successful:
+                    pool.terminate()
+                    break
+
+        print(
+            'Suggested hyper-parameters (solution {}, id {}):\n'
+            '  seed: {}\n'
+            '  {}'.format(
+                trial_num,
+                trial['_id'],
+                trial['result']['seed'],
+                pprint.pformat(trial['misc']['vals']),
+            )
+        )
+
+    def _cross_validate_hyper_parameters(self, trial):
+        def validate(offset):
+            self._load_data(offset)
+
+            np.random.seed(int(trial['result']['seed']))
+
+            try:
+                predicted_outputs = self._train(**hyper_parameters)
+                return round(
+                    np.sqrt(mean_squared_error(
+                        self.test_outputs,
+                        predicted_outputs
+                    )),
+                    6
+                )
+            except Exception as error:
+                return error
+
+        # unpack and resolve hyper-parameter value lists
+        hyper_parameters = trial['misc']['vals'].copy()
+        for parameter, value in hyper_parameters.items():
+            hyper_parameters[parameter] = self._resolve_choice(
+                parameter,
+                value[0]
+            )
+
+        return validate(offset=1), validate(offset=2)
+
+    def _build_choice(self, label):
+        return [label, self.search_space_choices[label]]
+
+    def _resolve_choice(self, label, value):
+        if label in self.search_space_choices:
+            return self.search_space_choices[label][value]
+        else:
+            return value
 
 
 def dispatch_examples():
@@ -244,6 +343,13 @@ def dispatch_examples():
         help='Optimize the hyper-parameters of the example'
              ' instead of running it'
     )
+    mode_group.add_argument(
+        '-c',
+        '--cross-validate',
+        metavar='EXP_KEY',
+        help='Suggest a set of hyper-parameters from the given experiment'
+             ' by cross-validating them'
+    )
 
     # example groups (map to a package)
     example_groups = parser.add_subparsers(
@@ -269,8 +375,9 @@ def dispatch_examples():
     mackey_glass_group.add_argument(
         '-n',
         '--network-type',
-        choices=['rls'],
-        default='rls',
+        metavar='TYPE',
+        choices=['pinv', 'lms', 'rls', 'mlp'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
     mackey_glass_group.add_argument(
@@ -282,8 +389,9 @@ def dispatch_examples():
     frequency_generator_group.add_argument(
         '-n',
         '--network-type',
-        choices=['mlp'],
-        default='mlp',
+        metavar='TYPE',
+        choices=['pinv', 'lms', 'mlp'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
 
@@ -291,8 +399,9 @@ def dispatch_examples():
     superposed_sinusoid_group.add_argument(
         '-n',
         '--network-type',
-        choices=['rls'],
-        default='rls',
+        metavar='TYPE',
+        choices=['pinv', 'lms', 'rls', 'mlp'],
+        default='pinv',
         help='The type of network to train (default: %(default)s)'
     )
 
@@ -302,25 +411,28 @@ def dispatch_examples():
         level=max(logging.DEBUG, logging.WARNING - args.verbosity * 10)
     )
 
-    # explicitly seed PRNG for reproducible data generation
-    np.random.seed(42)
-
     if args.example_group == 'mackey-glass':
         example_group = mackey_glass
-        data = example_group.load_data(args.data_file)
+        example_args = {'data_file': args.data_file}
     elif args.example_group == 'frequency-generator':
         example_group = frequency_generator
-        data = example_group.load_data()
+        example_args = {}
     elif args.example_group == 'superposed-sinusoid':
         example_group = superposed_sinusoid
-        data = example_group.load_data()
+        example_args = {}
 
-    if args.network_type == 'rls':
-        example = example_group.RlsExample(*data)
+    if args.network_type == 'pinv':
+        example = example_group.PseudoinverseExample(**example_args)
+    elif args.network_type == 'lms':
+        example = example_group.LmsExample(**example_args)
+    elif args.network_type == 'rls':
+        example = example_group.RlsExample(**example_args)
     elif args.network_type == 'mlp':
-        example = example_group.MlpExample(*data)
+        example = example_group.MlpExample(**example_args)
 
     if args.optimize:
         example.optimize(args.optimize)
+    elif args.cross_validate:
+        example.cross_validate(args.cross_validate)
     else:
         example.run(args.output_file)

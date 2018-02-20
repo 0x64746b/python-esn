@@ -12,45 +12,50 @@ from __future__ import (
 
 import numpy as np
 
+from esn.examples import EsnExample
 from esn.preprocessing import scale
 
 
-NUM_PERIODS = 1000
-SAMPLING_RATE = 50  # points per period
-NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLING_RATE
-
-TRAINING_LENGTH = int(NUM_SAMPLING_POINTS * 0.7)
-TEST_LENGTH = 500
+NUM_PERIODS = 10000
+SAMPLES_PER_PERIOD = 300  # without endpoint
+NUM_SAMPLING_POINTS = NUM_PERIODS * SAMPLES_PER_PERIOD
 
 
-def load_data():
-    sampling_points = np.linspace(
-        0,
-        NUM_PERIODS * 2 * np.pi,
-        num=NUM_SAMPLING_POINTS
-    )
-    signal = scale(
-        np.sin(sampling_points)
-        + np.sin(2 * sampling_points)
-        + np.sin(3.3 * sampling_points)
-        + np.sin(4 * sampling_points)
-        + np.cos(2.2 * sampling_points)
-        + np.cos(4 * sampling_points)
-        + np.cos(5 * sampling_points)
-    ).reshape(NUM_SAMPLING_POINTS, 1)
+class SuperposedSinusoidExample(EsnExample):
 
-    training_inputs = signal[:TRAINING_LENGTH]
-    training_outputs = signal[1:TRAINING_LENGTH + 1].copy()
+    def _load_data(self, offset=0):
+        sampling_points = np.linspace(
+            0,
+            NUM_PERIODS * 2 * np.pi,
+            num=NUM_SAMPLING_POINTS
+        )
+        signal = scale(
+            np.sin(sampling_points)
+            + np.sin(2 * sampling_points)
+            + np.sin(3.3 * sampling_points)
+            + np.sin(4 * sampling_points)
+            + np.cos(2.2 * sampling_points)
+            + np.cos(4 * sampling_points)
+            + np.cos(5 * sampling_points)
+        ).reshape(NUM_SAMPLING_POINTS, 1)
 
-    # consume training data
-    signal = np.delete(signal, np.s_[:TRAINING_LENGTH], axis=0)
+        # shift to a fresh set of data
+        discarded = offset * (self.num_training_samples + self.num_test_samples)
+        signal = np.delete(signal, np.s_[:discarded], axis=0)
 
-    test_inputs = signal[:TEST_LENGTH]
-    test_outputs = signal[1:TEST_LENGTH + 1]
+        self.training_inputs = signal[:self.num_training_samples]
+        self.training_outputs = signal[1:self.num_training_samples + 1].copy()
 
-    return training_inputs, training_outputs, test_inputs, test_outputs
+        # consume training data
+        signal = np.delete(signal, np.s_[:self.num_training_samples], axis=0)
+
+        self.test_inputs = signal[:self.num_test_samples]
+        self.test_outputs = signal[1:self.num_test_samples + 1]
 
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
+from .pseudoinverse import PseudoinverseExample
+from .lms import LmsExample
 from .rls import RlsExample
+from .mlp import MlpExample

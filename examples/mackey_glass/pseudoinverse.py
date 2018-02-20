@@ -1,6 +1,9 @@
 # coding: utf-8
 
-"""Train a recursive least squares filter to compute the output weights."""
+"""
+Use the pseudoinverse of the extended system states to compute the output
+weights.
+"""
 
 from __future__ import (
     absolute_import,
@@ -14,7 +17,7 @@ import logging
 import hyperopt
 import numpy as np
 
-from esn import RlsEsn
+from esn import Esn
 from esn.activation_functions import lecun
 from . import MackeyGlassExample
 
@@ -22,42 +25,38 @@ from . import MackeyGlassExample
 logger = logging.getLogger(__name__)
 
 
-class RlsExample(MackeyGlassExample):
+class PseudoinverseExample(MackeyGlassExample):
 
     def __init__(self, *args, **kwargs):
-        super(RlsExample, self).__init__(*args, **kwargs)
+        super(PseudoinverseExample, self).__init__(*args, **kwargs)
 
         self.num_training_samples = 1000
         self.num_test_samples = 500
 
-        self.title = 'Mackey-Glass; RLS; {} samples'.format(
+        self.title = 'Mackey-Glass; Pseudoinverse; {} samples'.format(
             self.num_training_samples
         )
 
-        self.random_seed = 1839385064
+        self.random_seed = 2785622170
         self.hyper_parameters = {
-            'reservoir_size': 3000,
-            'spectral_radius': 1.14,
-            'leaking_rate': 0.28,
-            'forgetting_factor': 0.99,
-            'autocorrelation_init': 0.1,
-            'sparsity': 0.66,
-            'initial_transients': 5000,
-            'state_noise': 0.0047857,
+            'reservoir_size': 100,
+            'spectral_radius': 1.21,
+            'leaking_rate': 0.61,
+            'sparsity': 0.31,
+            'initial_transients': 100,
+            'state_noise': 0.0000139,
             'squared_network_state': True,
             'activation_function': lecun,
-            'bias_scale': 0.88,
-            'signal_scale': 3.3,
+            'bias_scale': -3.04,
+            'signal_scale': 1.5,
         }
 
         self.search_space = (
-            hyperopt.hp.quniform('reservoir_size', 3000, 3001, 1000),
+            hyperopt.hp.quniform('reservoir_size', 100, 101, 10),
             hyperopt.hp.quniform('spectral_radius', 0.01, 2, 0.01),
             hyperopt.hp.quniform('leaking_rate', 0.01, 1, 0.01),
-            hyperopt.hp.quniform('forgetting_factor', 0.98, 1, 0.0001),
-            hyperopt.hp.qloguniform('autocorrelation_init', np.log(0.1), np.log(1), 0.0001),
             hyperopt.hp.quniform('sparsity', 0.01, 0.99, 0.01),
-            hyperopt.hp.quniform('initial_transients', 100, 1001, 100),
+            hyperopt.hp.quniform('initial_transients', 100, 501, 50),
             hyperopt.hp.quniform('state_noise', 1e-7, 1e-2, 1e-7),
             hyperopt.hp.choice(*self._build_choice('squared_network_state')),
             hyperopt.hp.choice(*self._build_choice('activation_function')),
@@ -65,13 +64,18 @@ class RlsExample(MackeyGlassExample):
             hyperopt.hp.qnormal('signal_scale', 1, 1, 0.1),
         )
 
+    def _load_data(self, offset=0):
+        super(PseudoinverseExample, self)._load_data(offset)
+
+        # remove many of the training labels to simulate incomplete data
+        self.training_outputs[1::3] = np.nan
+        self.training_outputs[2::3] = np.nan
+
     def _train(
             self,
             reservoir_size,
             spectral_radius,
             leaking_rate,
-            forgetting_factor,
-            autocorrelation_init,
             sparsity,
             initial_transients,
             state_noise,
@@ -81,14 +85,12 @@ class RlsExample(MackeyGlassExample):
             signal_scale,
             num_tracked_units=0,
     ):
-        self.esn = RlsEsn(
+        self.esn = Esn(
             in_size=1,
             reservoir_size=int(reservoir_size),
             out_size=1,
             spectral_radius=spectral_radius,
             leaking_rate=leaking_rate,
-            forgetting_factor=forgetting_factor,
-            autocorrelation_init=autocorrelation_init,
             sparsity=sparsity,
             initial_transients=int(initial_transients),
             state_noise=state_noise,
@@ -101,7 +103,7 @@ class RlsExample(MackeyGlassExample):
         self.esn.W_in *= [bias_scale, signal_scale]
 
         # train
-        self.esn.fit(self.training_inputs, self.training_outputs)
+        self.esn.incomplete_fit(self.training_inputs, self.training_outputs)
 
         # test
         predicted_outputs = [self.esn.predict(self.test_inputs[0])]

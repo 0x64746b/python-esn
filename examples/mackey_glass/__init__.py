@@ -10,42 +10,50 @@ from __future__ import (
     unicode_literals,
 )
 
-from matplotlib import pyplot as plt
-from matplotlib.offsetbox import AnchoredText
 import numpy as np
-from sklearn.metrics import mean_squared_error
 
+from esn.examples import EsnExample
 from esn.preprocessing import scale
 
 
-NUM_TRAINING_SAMPLES = 100000
-NUM_PREDICTION_SAMPLES = 500
+class MackeyGlassExample(EsnExample):
 
+    def __init__(self, data_file):
+        self._data_file = data_file
+        super(MackeyGlassExample, self).__init__()
 
-def load_data(file_name):
-    data = np.loadtxt(file_name)
+    def _load_data(self, offset=0):
+        data = np.loadtxt(self._data_file)
 
-    # scale data to stretch to [-1, 1]
-    data = scale(data)
+        # shift to a fresh set of data
+        discarded = offset * (self.num_training_samples + self.num_test_samples)
+        data = np.delete(data, np.s_[:discarded])
 
-    training_inputs = data[:NUM_TRAINING_SAMPLES].reshape(
-        NUM_TRAINING_SAMPLES,
-        1  # in_size
-    )
-    training_outputs = data[1:NUM_TRAINING_SAMPLES+1].reshape(
-        NUM_TRAINING_SAMPLES,
-        1  # out_size
-    ).copy()
+        # scale data to stretch to [-1, 1]
+        data = scale(data)
 
-    # consume training data
-    data = np.delete(data, np.s_[:NUM_TRAINING_SAMPLES])
+        self.training_inputs = data[:self.num_training_samples].reshape(
+            self.num_training_samples,
+            1  # in_size
+        )
+        self.training_outputs = data[1:self.num_training_samples+1].reshape(
+            self.num_training_samples,
+            1  # out_size
+        ).copy()
 
-    inputs = data[:NUM_PREDICTION_SAMPLES].reshape(NUM_PREDICTION_SAMPLES, 1)
-    correct_outputs = data[1:NUM_PREDICTION_SAMPLES+1]
+        # consume training data
+        data = np.delete(data, np.s_[:self.num_training_samples])
 
-    return training_inputs, training_outputs, inputs, correct_outputs
+        self.test_inputs = data[:self.num_test_samples].reshape(
+            self.num_test_samples,
+            1
+        )
+        self.test_outputs = data[1:self.num_test_samples + 1]
 
 
 # make modules importable from the package name space.
 #  import late to break cyclic import
+from .pseudoinverse import PseudoinverseExample
+from .lms import LmsExample
 from .rls import RlsExample
+from .mlp import MlpExample
